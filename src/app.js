@@ -5,20 +5,18 @@ import invoicesRoutes from "./routes/invoices.routes.js";
 import categoriesRoutes from "./routes/categories.routes.js";
 import emisorRoutes from "./routes/emisor.routes.js";
 
-
 import cors from "cors";
 
 const app = express();
 const corsOptions = {
-  origin: '*',
+  origin: "*",
 };
 app.use(cors(corsOptions)); // Aplica CORS con opciones para el puerto 8100
 app.use(express.json());
 
-
-app.use(productRoutes);
-app.use(menuRoutes);
-app.use(invoicesRoutes);
-app.use(categoriesRoutes);
-app.use(emisorRoutes);
+app.use("/api", productRoutes);
+app.use("/api", menuRoutes);
+app.use("/api", invoicesRoutes);
+app.use("/api", categoriesRoutes);
+app.use("/api", emisorRoutes);
 export default app;
