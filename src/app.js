@@ -1,0 +1,24 @@
+import express from "express";
+import productRoutes from "./routes/products.routes.js";
+import menuRoutes from "./routes/menu.routes.js";
+import invoicesRoutes from "./routes/invoices.routes.js";
+import categoriesRoutes from "./routes/categories.routes.js";
+import emisorRoutes from "./routes/emisor.routes.js";
+
+
+import cors from "cors";
+
+const app = express();
+const corsOptions = {
+  origin: "http://localhost:8100",
+};
+app.use(cors(corsOptions)); // Aplica CORS con opciones para el puerto 8100
+app.use(express.json());
+
+
+app.use(productRoutes);
+app.use(menuRoutes);
+app.use(invoicesRoutes);
+app.use(categoriesRoutes);
+app.use(emisorRoutes);
+export default app;
