@@ -1,80 +1,96 @@
 import { getConnection } from "../database/connection.js";
-import sql from "mssql";
 
 export const getCategories = async (req, res) => {
-  const pool = await getConnection();
-  const result = await pool.request().query("SELECT * FROM Categorias");
-  res.json(result.recordset);
+  try {
+    const supabase = await getConnection();
+    const { data, error } = await supabase
+      .from('categorias')
+      .select('*')
+      .order('id_categoria');
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: "Error interno del servidor", details: error.message });
+  }
 };
 
 export const getCategory = async (req, res) => {
-  const pool = await getConnection();
-  const result = await pool
-    .request()
-    .input("id", sql.Int, req.params.id)
-    .query("SELECT * FROM Categorias WHERE id_categoria = @id");
+  try {
+    const supabase = await getConnection();
+    const { data, error } = await supabase
+      .from('categorias')
+      .select('*')
+      .eq('id_categoria', req.params.id)
+      .single();
 
-  if (result.rowsAffected[0] === 0) {
-    return res.status(404).json({ message: "Product not found" });
+    if (error) throw error;
+    if (!data) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    return res.json(data);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: "Error interno del servidor", details: error.message });
   }
-
-  return res.json(result.recordset[0]);
 };
 
 export const createCategory = async (req, res) => {
-  console.log(req.body);
+  try {
+    const supabase = await getConnection();
+    const { data, error } = await supabase
+      .from('categorias')
+      .insert([{
+        nombre: req.body.nombre
+      }])
+      .select()
+      .single();
 
-  const pool = await getConnection();
-  const result = await pool
-    .request()
-    .input("nombre", sql.NVarChar, req.body.nombre)
-    .query(
-      `INSERT INTO Categorias (nombre)
-         OUTPUT INSERTED.id_categoria, INSERTED.nombre, INSERTED.estado, INSERTED.fecha_registro
-         VALUES (@nombre)`
-    );
-
-  const newCategory = result.recordset[0];
-
-  res.json({
-    id: newCategory.id_categoria,
-    nombre: newCategory.nombre,
-    estado: newCategory.estado,
-    fecha_registro: newCategory.fecha_registro,
-  });
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: "Error interno del servidor", details: error.message });
+  }
 };
 
 export const updateCategory = async (req, res) => {
-  const pool = await getConnection();
-  const result = await pool
-    .request()
-    .input("id_categoria", sql.Int, req.params.id)
-    .input("nombre", sql.NVarChar, req.body.nombre)
-    .input("estado", sql.Char, req.body.estado)
-    .query(
-      "UPDATE Categorias SET nombre = @nombre, estado = @estado WHERE id_categoria = @id_categoria"
-    );
+  try {
+    const supabase = await getConnection();
+    const { data, error } = await supabase
+      .from('categorias')
+      .update({
+        nombre: req.body.nombre,
+        estado: req.body.estado
+      })
+      .eq('id_categoria', req.params.id)
+      .select()
+      .single();
 
-  if (result.rowsAffected[0] === 0) {
-    return res.status(404).json({ message: "Product not found" });
+    if (error) throw error;
+    if (!data) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: "Error interno del servidor", details: error.message });
   }
-  res.json({
-    id: req.params.id,
-    nombre: req.body.nombre,
-    estado: req.body.estado,
-  });
 };
 
 export const deleteCategory = async (req, res) => {
-  const pool = await getConnection();
-  const result = await pool
-    .request()
-    .input("id_categoria", sql.Int, req.params.id)
-    .query("DELETE FROM Categorias WHERE id_categoria = @id_categoria");
+  try {
+    const supabase = await getConnection();
+    const { error } = await supabase
+      .from('categorias')
+      .delete()
+      .eq('id_categoria', req.params.id);
 
-  console.log(result);
-  if (result.rowsAffected[0] === 0) {
-    return res.status(404).json({ message: "Product not found" });
+    if (error) throw error;
+    return res.json({ message: "Category deleted" });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: "Error interno del servidor", details: error.message });
   }
-  return res.json({ message: "Product deleted" });
 };

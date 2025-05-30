@@ -1,0 +1,411 @@
+-- Establecer el esquema predeterminado
+SET search_path TO public;
+
+-- Definir el procedimiento insertar_datos_prueba de manera independiente
+CREATE OR REPLACE PROCEDURE insertar_datos_prueba()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO roles (rol, estado, fecha_registro)
+    VALUES 
+        ('Administrador', 'A', NOW()),
+        ('Vendedor', 'A', NOW()),
+        ('Inventario', 'A', NOW());
+
+    INSERT INTO usuarios (id_rol, nombre_completo, username, password, estado, fecha_registro)
+    VALUES 
+        (1, 'Juan Pérez', 'juanperez', 'hashedpassword123', 'A', NOW()),
+        (2, 'María Gómez', 'mariagomez', 'hashedpassword456', 'A', NOW()),
+        (3, 'Carlos López', 'carloslopez', 'hashedpassword789', 'A', NOW());
+
+    INSERT INTO categorias (nombre, estado, fecha_registro)
+    VALUES 
+        ('Electrónica', 'A', NOW()),
+        ('Ropa', 'A', NOW()),
+        ('Alimentos', 'A', NOW());
+
+    INSERT INTO productos (codigo, nombre, precio_venta, stock_actual, iva, id_categoria, estado, fecha_registro)
+    VALUES 
+        ('PROD001', 'Laptop HP', 799.99, 50, 0.15, 1, 'A', NOW()),
+        ('PROD002', 'Camiseta Azul', 19.99, 100, 0.15, 2, 'A', NOW()),
+        ('PROD003', 'Arroz 1kg', 1.50, 200, 0.15, 3, 'A', NOW());
+
+    INSERT INTO clientes (nombre, apellido, cedula_ruc, direccion, telefono, email, estado, fecha_registro)
+    VALUES 
+        ('Ana', 'Rodríguez', '1234567890', 'Av. Principal 123', '0991234567', 'ana@email.com', 'A', NOW()),
+        ('Luis', 'Martínez', '9876543210', 'Calle Secundaria 456', '0997654321', 'luis@email.com', 'A', NOW());
+
+    INSERT INTO emisor (ruc, razon_social, nombre_comercial, direccion, codigo_establecimiento, punto_emision, tipo_ambiente, obligado_contabilidad, certificado_path, contrasena_certificado, logo, fecha_registro, fecha_vencimiento_certificado)
+    VALUES 
+        ('1234567890001', 'Comercial Syntory S.A.', 'Syntory', 'Av. Central 789', '001', '001', '1', true, 'C:/certificados/syntory.p12', 'mypassword123', NULL, NOW(), '2026-04-19');
+
+    INSERT INTO factura_electronica (id_emisor, id_cliente, id_usuario, clave_acceso, numero_secuencial, fecha_emision, estado, fecha_autorizacion, xml_autorizado, pdf_path, fecha_registro)
+    VALUES 
+        (1, 1, 1, '01012025011234567890001001001000000000112345678', '000000001', '2025-04-19', 'A', NOW(), NULL, NULL, NOW()),
+        (1, 2, 2, '01012025011234567890001001001000000000212345678', '000000002', '2025-04-19', 'A', NOW(), NULL, NULL, NOW());
+
+    -- Valores ajustados para IVA al 15%
+    INSERT INTO detalle_factura (id_factura, id_producto, descripcion, cantidad, precio_unitario, subtotal, iva, total, fecha_registro)
+    VALUES 
+        (1, 1, 'Laptop HP 14 pulgadas', 2, 799.99, 1599.98, 239.997, 1839.977, NOW()),
+        (1, 2, 'Camiseta Azul', 3, 19.99, 59.97, 8.9955, 68.9655, NOW()),
+        (2, 3, 'Arroz 1kg', 5, 1.50, 7.50, 1.125, 8.625, NOW());
+
+    INSERT INTO forma_pago_factura (id_factura, forma_pago, valor_pago, fecha_registro)
+    VALUES 
+        (1, 'Efectivo', 1839.977, NOW()),
+        (1, 'Tarjeta', 68.9655, NOW()),
+        (2, 'Transferencia', 8.625, NOW());
+
+    INSERT INTO log_errores_factura (id_factura, descripcion, fecha_error)
+    VALUES 
+        (1, 'Error de conexión con el SRI', NOW()),
+        (2, 'Clave de acceso inválida', NOW());
+
+    INSERT INTO ingresos (id_usuario, total, fecha, estado)
+    VALUES 
+        (1, 2000.00, NOW(), 'A'),
+        (3, 150.00, NOW(), 'A');
+
+    INSERT INTO detalle_ingreso (id_ingreso, id_producto, cantidad, precio, fecha_registro)
+    VALUES 
+        (1, 1, 10, 700.00, NOW()),
+        (1, 2, 20, 15.00, NOW()),
+        (2, 3, 100, 1.20, NOW());
+
+    INSERT INTO menu (nombre, url, icon, estado, fecha_registro)
+    VALUES 
+        ('Inicio', '/tabs/home', 'home', 'A', NOW()),
+        ('Facturas', '/tabs/facturas', 'document', 'A', NOW()),
+        ('Inventario', '/tabs/productos', 'cube', 'A', NOW()),
+        ('Clientes', '/tabs/clientes', 'people', 'A', NOW());
+
+    INSERT INTO accesos (id_menu, id_rol, fecha_registro)
+    VALUES 
+        (1, 1, NOW()),
+        (2, 1, NOW()),
+        (3, 1, NOW()),
+        (4, 1, NOW()),
+        (1, 2, NOW()),
+        (2, 2, NOW()),
+        (4, 2, NOW()),
+        (1, 3, NOW()),
+        (3, 3, NOW());
+
+    INSERT INTO configuracion_sri (url_pruebas, url_produccion, fecha_vigencia_inicio, fecha_vigencia_fin, descripcion, fecha_registro)
+    VALUES 
+        ('https://celcer.sri.gob.ec/', 'https://cel.sri.gob.ec/', '2025-01-01', '2025-12-31', 'Configuración SRI 2025', NOW());
+
+    INSERT INTO configuracion_sistema (clave, valor, descripcion, fecha_modificacion)
+    VALUES 
+        ('MAX_FACTURAS_DIA', '100', 'Máximo de facturas por día', NOW()),
+        ('IVA_DEFAULT', '0.15', 'Porcentaje de IVA por defecto', NOW());
+
+    RAISE NOTICE 'Datos de prueba insertados correctamente.';
+END;
+$$;
+
+-- Definir el procedimiento limpiar_base_datos de manera independiente
+CREATE OR REPLACE PROCEDURE limpiar_base_datos()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    SET CONSTRAINTS ALL DEFERRED;
+
+    DELETE FROM detalle_ingreso;
+    DELETE FROM ingresos;
+    DELETE FROM log_errores_factura;
+    DELETE FROM forma_pago_factura;
+    DELETE FROM detalle_factura;
+    DELETE FROM factura_electronica;
+    DELETE FROM emisor;
+    DELETE FROM productos;
+    DELETE FROM clientes;
+    DELETE FROM accesos;
+    DELETE FROM menu;
+    DELETE FROM configuracion_sistema;
+    DELETE FROM configuracion_sri;
+    DELETE FROM usuarios;
+    DELETE FROM roles;
+    DELETE FROM categorias;
+
+    ALTER SEQUENCE detalle_ingreso_id_detalle_ingreso_seq RESTART WITH 1;
+    ALTER SEQUENCE ingresos_id_ingreso_seq RESTART WITH 1;
+    ALTER SEQUENCE log_errores_factura_id_error_seq RESTART WITH 1;
+    ALTER SEQUENCE forma_pago_factura_id_pago_seq RESTART WITH 1;
+    ALTER SEQUENCE detalle_factura_id_detalle_seq RESTART WITH 1;
+    ALTER SEQUENCE factura_electronica_id_factura_seq RESTART WITH 1;
+    ALTER SEQUENCE emisor_id_emisor_seq RESTART WITH 1;
+    ALTER SEQUENCE productos_id_producto_seq RESTART WITH 1;
+    ALTER SEQUENCE clientes_id_cliente_seq RESTART WITH 1;
+    ALTER SEQUENCE accesos_id_acceso_seq RESTART WITH 1;
+    ALTER SEQUENCE menu_id_menu_seq RESTART WITH 1;
+    ALTER SEQUENCE configuracion_sistema_id_configuracion_seq RESTART WITH 1;
+    ALTER SEQUENCE configuracion_sri_id_configuracion_seq RESTART WITH 1;
+    ALTER SEQUENCE usuarios_id_usuario_seq RESTART WITH 1;
+    ALTER SEQUENCE roles_id_rol_seq RESTART WITH 1;
+    ALTER SEQUENCE categorias_id_categoria_seq RESTART WITH 1;
+
+    RAISE NOTICE 'Base de datos limpiada correctamente. Todos los contadores IDENTITY han sido reiniciados.';
+END;
+$$;
+
+-- Procedimiento para inicializar la base de datos con control de transacciones y errores
+CREATE OR REPLACE PROCEDURE inicializar_base_datos()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_error_msg text;
+BEGIN
+    -- Iniciar transacción
+    BEGIN
+        -- Eliminar tablas si existen (en orden inverso por dependencias)
+        DROP TABLE IF EXISTS detalle_ingreso CASCADE;
+        DROP TABLE IF EXISTS ingresos CASCADE;
+        DROP TABLE IF EXISTS log_errores_factura CASCADE;
+        DROP TABLE IF EXISTS forma_pago_factura CASCADE;
+        DROP TABLE IF EXISTS detalle_factura CASCADE;
+        DROP TABLE IF EXISTS factura_electronica CASCADE;
+        DROP TABLE IF EXISTS emisor CASCADE;
+        DROP TABLE IF EXISTS productos CASCADE;
+        DROP TABLE IF EXISTS clientes CASCADE;
+        DROP TABLE IF EXISTS accesos CASCADE;
+        DROP TABLE IF EXISTS menu CASCADE;
+        DROP TABLE IF EXISTS configuracion_sistema CASCADE;
+        DROP TABLE IF EXISTS configuracion_sri CASCADE;
+        DROP TABLE IF EXISTS usuarios CASCADE;
+        DROP TABLE IF EXISTS roles CASCADE;
+        DROP TABLE IF EXISTS categorias CASCADE;
+
+        -- Crear tablas
+        CREATE TABLE roles (
+            id_rol int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            rol varchar(50) NOT NULL,
+            estado char(1) NOT NULL DEFAULT 'A',
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_roles PRIMARY KEY (id_rol)
+        );
+
+        CREATE TABLE usuarios (
+            id_usuario int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            id_rol int NOT NULL,
+            nombre_completo varchar(150) NOT NULL,
+            username varchar(50) NOT NULL,
+            password varchar(512) NOT NULL,
+            estado char(1) NOT NULL DEFAULT 'A',
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_usuarios PRIMARY KEY (id_usuario),
+            CONSTRAINT uq_usuarios_username UNIQUE (username),
+            CONSTRAINT fk_usuarios_roles FOREIGN KEY (id_rol) REFERENCES roles (id_rol)
+        );
+
+        CREATE TABLE categorias (
+            id_categoria int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            nombre varchar(50) NOT NULL,
+            estado char(1) NOT NULL DEFAULT 'A',
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_categorias PRIMARY KEY (id_categoria)
+        );
+
+        CREATE TABLE productos (
+            id_producto int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            codigo varchar(20) NOT NULL,
+            nombre varchar(100) NOT NULL,
+            precio_venta decimal(12, 2) NOT NULL,
+            stock_actual int NOT NULL,
+            iva decimal(5, 2) NOT NULL DEFAULT 0.15,
+            id_categoria int NULL,
+            estado char(1) NOT NULL DEFAULT 'A',
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_productos PRIMARY KEY (id_producto),
+            CONSTRAINT uq_productos_codigo UNIQUE (codigo),
+            CONSTRAINT fk_productos_categorias FOREIGN KEY (id_categoria) REFERENCES categorias (id_categoria)
+        );
+
+        CREATE TABLE clientes (
+            id_cliente int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            nombre varchar(100) NOT NULL,
+            apellido varchar(100) NULL,
+            cedula_ruc varchar(20) NOT NULL,
+            direccion varchar(300) NULL,
+            telefono varchar(15) NULL,
+            email varchar(100) NULL,
+            estado char(1) NOT NULL DEFAULT 'A',
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_clientes PRIMARY KEY (id_cliente),
+            CONSTRAINT uq_clientes_cedula_ruc UNIQUE (cedula_ruc)
+        );
+
+        CREATE TABLE emisor (
+            id_emisor int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            ruc char(13) NOT NULL,
+            razon_social varchar(300) NOT NULL,
+            nombre_comercial varchar(300) NULL,
+            direccion varchar(300) NOT NULL,
+            codigo_establecimiento char(3) NOT NULL,
+            punto_emision char(3) NOT NULL,
+            tipo_ambiente char(1) NOT NULL,
+            obligado_contabilidad boolean NOT NULL DEFAULT false,
+            certificado_path varchar(500) NOT NULL,
+            contrasena_certificado varchar(100) NOT NULL,
+            logo bytea NULL,
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            fecha_vencimiento_certificado date NULL,
+            CONSTRAINT pk_emisor PRIMARY KEY (id_emisor),
+            CONSTRAINT uq_emisor_ruc UNIQUE (ruc)
+        );
+
+        CREATE TABLE factura_electronica (
+            id_factura int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            id_emisor int NOT NULL,
+            id_cliente int NULL,
+            id_usuario int NOT NULL,
+            clave_acceso char(49) NOT NULL,
+            numero_secuencial char(9) NOT NULL,
+            fecha_emision date NOT NULL,
+            estado char(1) NOT NULL DEFAULT 'A',
+            fecha_autorizacion timestamp(3) NULL,
+            xml_autorizado text NULL,
+            pdf_path varchar(500) NULL,
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_factura_electronica PRIMARY KEY (id_factura),
+            CONSTRAINT uq_factura_electronica_clave_acceso UNIQUE (clave_acceso),
+            CONSTRAINT fk_factura_electronica_clientes FOREIGN KEY (id_cliente) REFERENCES clientes (id_cliente),
+            CONSTRAINT fk_factura_electronica_emisor FOREIGN KEY (id_emisor) REFERENCES emisor (id_emisor),
+            CONSTRAINT fk_factura_electronica_usuarios FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario)
+        );
+
+        CREATE TABLE detalle_factura (
+            id_detalle int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            id_factura int NOT NULL,
+            id_producto int NOT NULL,
+            descripcion varchar(300) NOT NULL,
+            cantidad decimal(12, 2) NOT NULL,
+            precio_unitario decimal(12, 2) NOT NULL,
+            subtotal decimal(12, 2) NOT NULL,
+            iva decimal(12, 2) NOT NULL,
+            total decimal(12, 2) NOT NULL,
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_detalle_factura PRIMARY KEY (id_detalle),
+            CONSTRAINT fk_detalle_factura_factura_electronica FOREIGN KEY (id_factura) REFERENCES factura_electronica (id_factura) ON DELETE CASCADE,
+            CONSTRAINT fk_detalle_factura_productos FOREIGN KEY (id_producto) REFERENCES productos (id_producto)
+        );
+
+        CREATE TABLE forma_pago_factura (
+            id_pago int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            id_factura int NOT NULL,
+            forma_pago varchar(50) NOT NULL,
+            valor_pago decimal(12, 2) NOT NULL,
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_forma_pago_factura PRIMARY KEY (id_pago),
+            CONSTRAINT fk_forma_pago_factura_factura_electronica FOREIGN KEY (id_factura) REFERENCES factura_electronica (id_factura) ON DELETE CASCADE
+        );
+
+        CREATE TABLE log_errores_factura (
+            id_error int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            id_factura int NULL,
+            descripcion varchar(1000) NOT NULL,
+            fecha_error timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_log_errores_factura PRIMARY KEY (id_error),
+            CONSTRAINT fk_log_errores_factura_factura_electronica FOREIGN KEY (id_factura) REFERENCES factura_electronica (id_factura)
+        );
+
+        CREATE TABLE ingresos (
+            id_ingreso int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            id_usuario int NOT NULL,
+            total decimal(12, 2) NOT NULL,
+            fecha timestamp(3) NOT NULL DEFAULT now(),
+            estado char(1) NOT NULL DEFAULT 'A',
+            CONSTRAINT pk_ingresos PRIMARY KEY (id_ingreso),
+            CONSTRAINT fk_ingresos_usuarios FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario)
+        );
+
+        CREATE TABLE detalle_ingreso (
+            id_detalle_ingreso int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            id_ingreso int NOT NULL,
+            id_producto int NOT NULL,
+            cantidad decimal(12, 2) NOT NULL,
+            precio decimal(12, 2) NOT NULL,
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_detalle_ingreso PRIMARY KEY (id_detalle_ingreso),
+            CONSTRAINT fk_detalle_ingreso_ingresos FOREIGN KEY (id_ingreso) REFERENCES ingresos (id_ingreso) ON DELETE CASCADE,
+            CONSTRAINT fk_detalle_ingreso_productos FOREIGN KEY (id_producto) REFERENCES productos (id_producto)
+        );
+
+        CREATE TABLE menu (
+            id_menu int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            nombre varchar(100) NOT NULL,
+            url varchar(500) NOT NULL,
+            icon varchar(100) NOT NULL,
+            estado char(1) NOT NULL DEFAULT 'A',
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_menu PRIMARY KEY (id_menu)
+        );
+
+        CREATE TABLE accesos (
+            id_acceso int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            id_menu int NOT NULL,
+            id_rol int NOT NULL,
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_accesos PRIMARY KEY (id_acceso),
+            CONSTRAINT fk_accesos_menu FOREIGN KEY (id_menu) REFERENCES menu (id_menu),
+            CONSTRAINT fk_accesos_roles FOREIGN KEY (id_rol) REFERENCES roles (id_rol)
+        );
+
+        CREATE TABLE configuracion_sistema (
+            id_configuracion int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            clave varchar(100) NOT NULL,
+            valor varchar(500) NOT NULL,
+            descripcion varchar(300) NULL,
+            fecha_modificacion timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_configuracion_sistema PRIMARY KEY (id_configuracion),
+            CONSTRAINT uq_configuracion_sistema_clave UNIQUE (clave)
+        );
+
+        CREATE TABLE configuracion_sri (
+            id_configuracion int GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1) NOT NULL,
+            url_pruebas varchar(500) NOT NULL,
+            url_produccion varchar(500) NOT NULL,
+            fecha_vigencia_inicio date NOT NULL,
+            fecha_vigencia_fin date NULL,
+            descripcion varchar(500) NULL,
+            fecha_registro timestamp(3) NOT NULL DEFAULT now(),
+            CONSTRAINT pk_configuracion_sri PRIMARY KEY (id_configuracion)
+        );
+
+        -- Crear índices
+        CREATE INDEX ix_accesos_id_menu ON accesos (id_menu ASC);
+        CREATE INDEX ix_accesos_id_rol ON accesos (id_rol ASC);
+        CREATE INDEX ix_detalle_ingreso_id_ingreso ON detalle_ingreso (id_ingreso ASC);
+        CREATE INDEX ix_detalle_ingreso_id_producto ON detalle_ingreso (id_producto ASC);
+        CREATE INDEX ix_detalle_factura_id_factura ON detalle_factura (id_factura ASC);
+        CREATE INDEX ix_detalle_factura_id_producto ON detalle_factura (id_producto ASC);
+        CREATE INDEX ix_factura_electronica_fecha_emision ON factura_electronica (fecha_emision ASC);
+        CREATE INDEX ix_factura_electronica_id_cliente ON factura_electronica (id_cliente ASC);
+        CREATE INDEX ix_factura_electronica_id_emisor ON factura_electronica (id_emisor ASC);
+        CREATE INDEX ix_factura_electronica_id_usuario ON factura_electronica (id_usuario ASC);
+        CREATE INDEX ix_forma_pago_factura_id_factura ON forma_pago_factura (id_factura ASC);
+        CREATE INDEX ix_ingresos_fecha ON ingresos (fecha ASC);
+        CREATE INDEX ix_ingresos_id_usuario ON ingresos (id_usuario ASC);
+        CREATE INDEX ix_log_errores_factura_fecha_error ON log_errores_factura (fecha_error ASC);
+        CREATE INDEX ix_log_errores_factura_id_factura ON log_errores_factura (id_factura ASC);
+        CREATE INDEX ix_productos_id_categoria ON productos (id_categoria ASC);
+        CREATE INDEX ix_usuarios_id_rol ON usuarios (id_rol ASC);
+
+        -- Ejecutar el procedimiento para insertar datos de prueba
+        CALL insertar_datos_prueba();
+
+        -- Confirmar transacción
+        RAISE NOTICE 'Base de datos inicializada correctamente.';
+    EXCEPTION WHEN OTHERS THEN
+        -- Capturar el mensaje de error
+        GET STACKED DIAGNOSTICS v_error_msg = MESSAGE_TEXT;
+        -- Hacer rollback de la transacción
+        RAISE NOTICE 'Error al inicializar la base de datos: %', v_error_msg;
+        RAISE EXCEPTION 'Fallo en la inicialización: %', v_error_msg;
+    END;
+END;
+$$;
+
+-- Ejecutar el procedimiento para inicializar la base de datos
+CALL inicializar_base_datos();

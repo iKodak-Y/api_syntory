@@ -10,7 +10,7 @@ import cors from "cors";
 
 const app = express();
 const corsOptions = {
-  origin: "http://localhost:8100",
+  origin: '*',
 };
 app.use(cors(corsOptions)); // Aplica CORS con opciones para el puerto 8100
 app.use(express.json());
