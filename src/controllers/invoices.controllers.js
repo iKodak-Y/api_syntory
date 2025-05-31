@@ -78,10 +78,16 @@ export const getLastInvoiceNumber = async (req, res) => {
     // Llamar a la función de la base de datos
     const { data, error } = await supabase.rpc("obtener_siguiente_secuencial", {
       p_emisor_id: parseInt(emisorId),
-      p_punto_emision: puntoEmision,
+      p_punto_emision: puntoEmision.trim(), // asegurar que sea exactamente 3 caracteres
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error en BD:", error);
+      return res.status(500).json({
+        message: "Error al obtener el secuencial",
+        details: error.message,
+      });
+    }
 
     if (!data || !data[0]) {
       return res.status(500).json({
@@ -96,8 +102,11 @@ export const getLastInvoiceNumber = async (req, res) => {
       });
     }
 
+    // Asegurar que el número secuencial tenga exactamente 9 caracteres
+    const secuencial = data[0].siguiente_secuencial.padStart(9, "0");
+
     res.json({
-      last_number: data[0].siguiente_secuencial,
+      last_number: secuencial,
       mensaje: "OK",
     });
   } catch (error) {
