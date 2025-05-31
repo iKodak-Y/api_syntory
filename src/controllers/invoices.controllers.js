@@ -75,24 +75,36 @@ export const getLastInvoiceNumber = async (req, res) => {
     const { emisorId, puntoEmision } = req.params;
     const supabase = await getConnection();
 
-    // Consultar el último número secuencial para el emisor y punto de emisión específicos
-    const { data, error } = await supabase
-      .from("factura_electronica")
-      .select("numero_secuencial")
-      .eq("id_emisor", emisorId)
-      .eq("punto_emision", puntoEmision)
-      .order("numero_secuencial", { ascending: false })
-      .limit(1);
+    // Llamar a la función de la base de datos
+    const { data, error } = await supabase.rpc("obtener_siguiente_secuencial", {
+      p_emisor_id: parseInt(emisorId),
+      p_punto_emision: puntoEmision,
+    });
 
     if (error) throw error;
 
-    const lastNumber =
-      data && data.length > 0 ? data[0].numero_secuencial : "000000000";
-    res.json({ last_number: lastNumber });
+    if (!data || !data[0]) {
+      return res.status(500).json({
+        message: "Error al obtener el secuencial",
+      });
+    }
+
+    if (data[0].mensaje !== "OK") {
+      return res.status(400).json({
+        error: true,
+        message: data[0].mensaje,
+      });
+    }
+
+    res.json({
+      last_number: data[0].siguiente_secuencial,
+      mensaje: "OK",
+    });
   } catch (error) {
     console.error("Error:", error);
-    res
-      .status(500)
-      .json({ message: "Error interno del servidor", details: error.message });
+    res.status(500).json({
+      message: "Error interno del servidor",
+      details: error.message,
+    });
   }
 };
