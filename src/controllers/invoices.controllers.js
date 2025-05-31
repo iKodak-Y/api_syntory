@@ -69,3 +69,30 @@ export const getBill = async (req, res) => {
       .json({ message: "Error interno del servidor", details: error.message });
   }
 };
+
+export const getLastInvoiceNumber = async (req, res) => {
+  try {
+    const { emisorId, puntoEmision } = req.params;
+    const supabase = await getConnection();
+
+    // Consultar el último número secuencial para el emisor y punto de emisión específicos
+    const { data, error } = await supabase
+      .from("factura_electronica")
+      .select("numero_secuencial")
+      .eq("id_emisor", emisorId)
+      .eq("punto_emision", puntoEmision)
+      .order("numero_secuencial", { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+
+    const lastNumber =
+      data && data.length > 0 ? data[0].numero_secuencial : "000000000";
+    res.json({ last_number: lastNumber });
+  } catch (error) {
+    console.error("Error:", error);
+    res
+      .status(500)
+      .json({ message: "Error interno del servidor", details: error.message });
+  }
+};
