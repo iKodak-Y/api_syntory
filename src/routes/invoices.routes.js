@@ -5,7 +5,8 @@ import {    getBill,
     createInvoice,
     updateInvoiceStatus,
     voidInvoice,
-    procesarFactura
+    procesarFactura,
+    saveDraftInvoice
 } from "./../controllers/invoices.controllers.js";
 
 const router = Router();
@@ -20,5 +21,6 @@ router.post("/bill", createInvoice);
 router.put("/bill/:id/status", updateInvoiceStatus);
 router.put("/bill/:id/void", voidInvoice);
 router.post("/bill/:id/process", procesarFactura);
+router.post("/bill/draft", saveDraftInvoice);
 
 export default router;

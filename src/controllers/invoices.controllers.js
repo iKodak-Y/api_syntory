@@ -1,7 +1,7 @@
 import { getConnection } from "../database/connection.js";
-import SRIService from '../services/sri.service.js';
-import path from 'path';
-import fs from 'fs';
+import SRIService from "../services/sri.service.js";
+import path from "path";
+import fs from "fs";
 
 export const getInvoices = async (req, res) => {
   try {
@@ -176,12 +176,14 @@ export const createInvoice = async (req, res) => {
 
     // Generar clave de acceso (formato: ddmmyyyytipoidrucestabptoemisecuencial)
     const fecha = new Date();
-    const clave_acceso = `${fecha
-      .getDate()
+    const clave_acceso = `${fecha.getDate().toString().padStart(2, "0")}${(
+      fecha.getMonth() + 1
+    )
       .toString()
-      .padStart(2, "0")}${(fecha.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}${fecha.getFullYear()}01${id_emisor}001${punto_emision}${numero_secuencial}12345678`;
+      .padStart(
+        2,
+        "0"
+      )}${fecha.getFullYear()}01${id_emisor}001${punto_emision}${numero_secuencial}12345678`;
 
     // Iniciar transacción
     const { data: factura, error: facturaError } = await supabase
@@ -192,7 +194,8 @@ export const createInvoice = async (req, res) => {
           id_cliente,
           id_usuario,
           clave_acceso,
-          numero_secuencial,          fecha_emision: fecha.toISOString().split("T")[0],
+          numero_secuencial,
+          fecha_emision: fecha.toISOString().split("T")[0],
           estado: "P", // Pendiente de envío al SRI
           punto_emision,
         },
@@ -227,10 +230,11 @@ export const createInvoice = async (req, res) => {
     if (pagosError) throw pagosError;
 
     // Retornar factura creada con todos sus detalles
-    const { data: facturaCompleta, error: facturaCompletaError } = await supabase
-      .from("factura_electronica")
-      .select(
-        `
+    const { data: facturaCompleta, error: facturaCompletaError } =
+      await supabase
+        .from("factura_electronica")
+        .select(
+          `
         *,
         clientes:id_cliente (*),
         emisor:id_emisor (*),
@@ -238,9 +242,9 @@ export const createInvoice = async (req, res) => {
         detalle_factura (*),
         forma_pago_factura (*)
       `
-      )
-      .eq("id_factura", factura.id_factura)
-      .single();
+        )
+        .eq("id_factura", factura.id_factura)
+        .single();
 
     if (facturaCompletaError) throw facturaCompletaError;
 
@@ -260,22 +264,25 @@ export const createInvoice = async (req, res) => {
 export const updateInvoiceStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { estado, fecha_autorizacion, xml_autorizado, pdf_path } = req.body;    if (!estado) {
+    const { estado, fecha_autorizacion, xml_autorizado, pdf_path } = req.body;
+    if (!estado) {
       return res.status(400).json({
         message: "El estado es requerido",
       });
     }
 
     // Validar que el estado sea válido
-    const estadosValidos = ['P', 'E', 'A', 'R', 'N', 'X'];
+    const estadosValidos = ["P", "E", "A", "R", "N", "X"];
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({
-        message: "Estado inválido. Los estados válidos son: " + estadosValidos.join(', ')
+        message:
+          "Estado inválido. Los estados válidos son: " +
+          estadosValidos.join(", "),
       });
     }
 
     const supabase = await getConnection();
-    
+
     // Verificar el estado actual
     const { data: currentInvoice, error: getCurrentError } = await supabase
       .from("factura_electronica")
@@ -287,15 +294,18 @@ export const updateInvoiceStatus = async (req, res) => {
 
     if (!currentInvoice) {
       return res.status(404).json({
-        message: "Factura no encontrada"
+        message: "Factura no encontrada",
       });
     }
 
     // Validar la transición de estados
-    const esTransicionValida = validarTransicionEstado(currentInvoice.estado, estado);
+    const esTransicionValida = validarTransicionEstado(
+      currentInvoice.estado,
+      estado
+    );
     if (!esTransicionValida.valido) {
       return res.status(400).json({
-        message: esTransicionValida.mensaje
+        message: esTransicionValida.mensaje,
       });
     }
 
@@ -348,7 +358,7 @@ export const voidInvoice = async (req, res) => {
         },
       ]);
 
-    if (logError) throw logError;    // Verificar el estado actual de la factura
+    if (logError) throw logError; // Verificar el estado actual de la factura
     const { data: currentInvoice, error: getCurrentError } = await supabase
       .from("factura_electronica")
       .select("estado")
@@ -359,14 +369,14 @@ export const voidInvoice = async (req, res) => {
 
     if (!currentInvoice) {
       return res.status(404).json({
-        message: "Factura no encontrada"
+        message: "Factura no encontrada",
       });
     }
 
     // Solo se pueden anular facturas autorizadas
-    if (currentInvoice.estado !== 'A') {
+    if (currentInvoice.estado !== "A") {
       return res.status(400).json({
-        message: "Solo se pueden anular facturas autorizadas"
+        message: "Solo se pueden anular facturas autorizadas",
       });
     }
 
@@ -403,19 +413,19 @@ export const voidInvoice = async (req, res) => {
 const validarTransicionEstado = (estadoActual, nuevoEstado) => {
   // Definir transiciones permitidas
   const transicionesPermitidas = {
-    'P': ['E', 'X'],           // De Pendiente puede pasar a Enviada o Error
-    'E': ['A', 'R', 'X'],      // De Enviada puede pasar a Autorizada, Rechazada o Error
-    'A': ['N'],                // De Autorizada solo puede pasar a Anulada
-    'R': ['P', 'X'],          // De Rechazada puede volver a Pendiente o Error
-    'X': ['P'],               // De Error puede volver a Pendiente
-    'N': []                   // De Anulada no puede cambiar
+    P: ["E", "X"], // De Pendiente puede pasar a Enviada o Error
+    E: ["A", "R", "X"], // De Enviada puede pasar a Autorizada, Rechazada o Error
+    A: ["N"], // De Autorizada solo puede pasar a Anulada
+    R: ["P", "X"], // De Rechazada puede volver a Pendiente o Error
+    X: ["P"], // De Error puede volver a Pendiente
+    N: [], // De Anulada no puede cambiar
   };
 
   // Si no existe la transición actual, no es válido
   if (!transicionesPermitidas[estadoActual]) {
     return {
       valido: false,
-      mensaje: `Estado actual '${estadoActual}' no es válido`
+      mensaje: `Estado actual '${estadoActual}' no es válido`,
     };
   }
 
@@ -423,13 +433,15 @@ const validarTransicionEstado = (estadoActual, nuevoEstado) => {
   if (!transicionesPermitidas[estadoActual].includes(nuevoEstado)) {
     return {
       valido: false,
-      mensaje: `No se puede cambiar de '${estadoActual}' a '${nuevoEstado}'. Estados permitidos: ${transicionesPermitidas[estadoActual].join(', ')}`
+      mensaje: `No se puede cambiar de '${estadoActual}' a '${nuevoEstado}'. Estados permitidos: ${transicionesPermitidas[
+        estadoActual
+      ].join(", ")}`,
     };
   }
 
   return {
     valido: true,
-    mensaje: 'Transición válida'
+    mensaje: "Transición válida",
   };
 };
 
@@ -441,25 +453,32 @@ const validarTransicionEstado = (estadoActual, nuevoEstado) => {
 const procesarFacturaSRI = async (factura) => {
   try {
     const supabase = await getConnection();
-    
+
     // 1. Obtener datos completos
     const { data: facturaCompleta } = await supabase
-      .from('factura_electronica')
-      .select(`
+      .from("factura_electronica")
+      .select(
+        `
         *,
         clientes:id_cliente (*),
         emisor:id_emisor (*),
         usuarios:id_usuario (*),
         detalle_factura (*)
-      `)
-      .eq('id_factura', factura.id_factura)
+      `
+      )
+      .eq("id_factura", factura.id_factura)
       .single();
 
     // 2. Generar XML
     const xmlSinFirma = await SRIService.generarXML(facturaCompleta);
-    
+
     // Guardar XML sin firma
-    const pathXmlSinFirma = path.join(process.cwd(), 'comprobantes', 'no-firmados', `${factura.clave_acceso}.xml`);
+    const pathXmlSinFirma = path.join(
+      process.cwd(),
+      "comprobantes",
+      "no-firmados",
+      `${factura.clave_acceso}.xml`
+    );
     fs.writeFileSync(pathXmlSinFirma, xmlSinFirma);
 
     // 3. Firmar XML
@@ -470,68 +489,96 @@ const procesarFacturaSRI = async (factura) => {
     );
 
     // Guardar XML firmado
-    const pathXmlFirmado = path.join(process.cwd(), 'comprobantes', 'firmados', `${factura.clave_acceso}.xml`);
+    const pathXmlFirmado = path.join(
+      process.cwd(),
+      "comprobantes",
+      "firmados",
+      `${factura.clave_acceso}.xml`
+    );
     fs.writeFileSync(pathXmlFirmado, xmlFirmado);
 
     // 4. Enviar al SRI
-    const esProduccion = facturaCompleta.emisor.tipo_ambiente === '2';
-    const respuestaRecepcion = await SRIService.enviarComprobante(xmlFirmado, esProduccion);
+    const esProduccion = facturaCompleta.emisor.tipo_ambiente === "2";
+    const respuestaRecepcion = await SRIService.enviarComprobante(
+      xmlFirmado,
+      esProduccion
+    );
 
-    if (respuestaRecepcion.estado === 'RECIBIDA') {
+    if (respuestaRecepcion.estado === "RECIBIDA") {
       // 5. Solicitar autorización
-      const respuestaAutorizacion = await SRIService.autorizarComprobante(factura.clave_acceso, esProduccion);
+      const respuestaAutorizacion = await SRIService.autorizarComprobante(
+        factura.clave_acceso,
+        esProduccion
+      );
 
-      if (respuestaAutorizacion.estado === 'AUTORIZADO') {
+      if (respuestaAutorizacion.estado === "AUTORIZADO") {
         // Guardar XML autorizado
-        const pathXmlAutorizado = path.join(process.cwd(), 'comprobantes', 'autorizados', `${factura.clave_acceso}.xml`);
+        const pathXmlAutorizado = path.join(
+          process.cwd(),
+          "comprobantes",
+          "autorizados",
+          `${factura.clave_acceso}.xml`
+        );
         fs.writeFileSync(pathXmlAutorizado, respuestaAutorizacion.comprobante);
 
         // Generar PDF
-        const pdfBuffer = await SRIService.generarPDF(facturaCompleta, respuestaAutorizacion.comprobante);
-        const pathPdf = path.join(process.cwd(), 'comprobantes', 'pdf', `${factura.clave_acceso}.pdf`);
+        const pdfBuffer = await SRIService.generarPDF(
+          facturaCompleta,
+          respuestaAutorizacion.comprobante
+        );
+        const pathPdf = path.join(
+          process.cwd(),
+          "comprobantes",
+          "pdf",
+          `${factura.clave_acceso}.pdf`
+        );
         fs.writeFileSync(pathPdf, pdfBuffer);
 
         // Actualizar factura
         await supabase
-          .from('factura_electronica')
+          .from("factura_electronica")
           .update({
-            estado: 'A',
+            estado: "A",
             fecha_autorizacion: new Date().toISOString(),
             xml_autorizado: respuestaAutorizacion.comprobante,
-            pdf_path: pathPdf
+            pdf_path: pathPdf,
           })
-          .eq('id_factura', factura.id_factura);
+          .eq("id_factura", factura.id_factura);
 
         return {
           success: true,
-          message: 'Factura autorizada correctamente',
-          numero_autorizacion: respuestaAutorizacion.numeroAutorizacion
+          message: "Factura autorizada correctamente",
+          numero_autorizacion: respuestaAutorizacion.numeroAutorizacion,
         };
       } else {
         // Registrar error de autorización
-        throw new Error(`Error de autorización: ${respuestaAutorizacion.mensajes.join(', ')}`);
+        throw new Error(
+          `Error de autorización: ${respuestaAutorizacion.mensajes.join(", ")}`
+        );
       }
     } else {
       // Registrar error de recepción
-      throw new Error(`Error de recepción: ${respuestaRecepcion.mensajes.join(', ')}`);
+      throw new Error(
+        `Error de recepción: ${respuestaRecepcion.mensajes.join(", ")}`
+      );
     }
   } catch (error) {
     // Registrar error en log
     const supabase = await getConnection();
-    await supabase
-      .from('log_errores_factura')
-      .insert([{
+    await supabase.from("log_errores_factura").insert([
+      {
         id_factura: factura.id_factura,
-        descripcion: error.message
-      }]);
+        descripcion: error.message,
+      },
+    ]);
 
     // Actualizar estado de la factura
     await supabase
-      .from('factura_electronica')
+      .from("factura_electronica")
       .update({
-        estado: 'X'
+        estado: "X",
       })
-      .eq('id_factura', factura.id_factura);
+      .eq("id_factura", factura.id_factura);
 
     throw error;
   }
@@ -543,28 +590,146 @@ const procesarFacturaSRI = async (factura) => {
 export const procesarFactura = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const supabase = await getConnection();
     const { data: factura, error } = await supabase
-      .from('factura_electronica')
-      .select('*')
-      .eq('id_factura', id)
+      .from("factura_electronica")
+      .select("*")
+      .eq("id_factura", id)
       .single();
 
     if (error) throw error;
     if (!factura) {
       return res.status(404).json({
-        message: "Factura no encontrada"
+        message: "Factura no encontrada",
       });
     }
 
     const resultado = await procesarFacturaSRI(factura);
     res.json(resultado);
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
     res.status(500).json({
       message: "Error procesando la factura",
-      details: error.message
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * Guarda un borrador de factura
+ */
+export const saveDraftInvoice = async (req, res) => {
+  try {
+    const {
+      emisor_id,
+      punto_emision,
+      secuencial,
+      fecha_emision,
+      cliente,
+      productos,
+      formas_pago,
+      info_adicional,
+      subtotal,
+      iva_total,
+      total,
+    } = req.body;
+
+    // Validar campos mínimos necesarios
+    if (!emisor_id || !punto_emision || !secuencial) {
+      return res.status(400).json({
+        message: "Faltan campos requeridos para el borrador",
+      });
+    }
+
+    const supabase = await getConnection();
+
+    // Insertar la factura como borrador (estado 'P' de pendiente)
+    const { data: factura, error: facturaError } = await supabase
+      .from("factura_electronica")
+      .insert([
+        {
+          id_emisor: emisor_id,
+          punto_emision,
+          secuencial,
+          fecha_emision,
+          estado: "P", // P de pendiente/borrador
+          ambiente_sri: 1, // 1 para pruebas por defecto
+          // Datos del cliente
+          id_cliente: cliente.identificacion,
+          // Totales
+          subtotal,
+          iva_total,
+          total,
+        },
+      ])
+      .select()
+      .single();
+
+    if (facturaError) throw facturaError;
+
+    // Si hay productos, insertarlos
+    if (productos && productos.length > 0) {
+      const detallesConFactura = productos.map((producto) => ({
+        id_factura: factura.id_factura,
+        id_producto: producto.codigo,
+        cantidad: producto.cantidad,
+        precio_unitario: producto.precio_unitario,
+        descuento: producto.descuento,
+        iva: producto.iva,
+        subtotal: producto.subtotal,
+        total: producto.total,
+      }));
+
+      const { error: detallesError } = await supabase
+        .from("detalle_factura")
+        .insert(detallesConFactura);
+
+      if (detallesError) throw detallesError;
+    }
+
+    // Si hay formas de pago, insertarlas
+    if (formas_pago && formas_pago.length > 0) {
+      const pagosConFactura = formas_pago.map((pago) => ({
+        id_factura: factura.id_factura,
+        tipo: pago.tipo,
+        valor: pago.valor,
+        plazo: pago.plazo || 0,
+        unidad_tiempo: pago.unidad_tiempo || "dias",
+      }));
+
+      const { error: pagosError } = await supabase
+        .from("forma_pago_factura")
+        .insert(pagosConFactura);
+
+      if (pagosError) throw pagosError;
+    }
+
+    // Si hay información adicional, insertarla
+    if (info_adicional && info_adicional.length > 0) {
+      const infoAdicionalConFactura = info_adicional.map((info) => ({
+        id_factura: factura.id_factura,
+        nombre: info.nombre,
+        descripcion: info.descripcion,
+      }));
+
+      const { error: infoError } = await supabase
+        .from("info_adicional_factura")
+        .insert(infoAdicionalConFactura);
+
+      if (infoError) throw infoError;
+    }
+
+    // Retornar la factura creada
+    res.status(201).json({
+      message: "Borrador guardado exitosamente",
+      factura,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      message: "Error interno del servidor",
+      details: error.message,
     });
   }
 };
