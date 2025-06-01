@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { 
-    getBill, 
+import {    getBill, 
     getInvoices, 
     getLastInvoiceNumber,
     createInvoice,
     updateInvoiceStatus,
-    voidInvoice
+    voidInvoice,
+    procesarFactura
 } from "./../controllers/invoices.controllers.js";
 
 const router = Router();
@@ -19,5 +19,6 @@ router.get("/bill/last-number/:emisorId/:puntoEmision", getLastInvoiceNumber);
 router.post("/bill", createInvoice);
 router.put("/bill/:id/status", updateInvoiceStatus);
 router.put("/bill/:id/void", voidInvoice);
+router.post("/bill/:id/process", procesarFactura);
 
 export default router;

@@ -1,4 +1,7 @@
 import { getConnection } from "../database/connection.js";
+import SRIService from '../services/sri.service.js';
+import path from 'path';
+import fs from 'fs';
 
 export const getInvoices = async (req, res) => {
   try {
@@ -428,4 +431,140 @@ const validarTransicionEstado = (estadoActual, nuevoEstado) => {
     valido: true,
     mensaje: 'Transición válida'
   };
+};
+
+/**
+ * Procesa una factura con el SRI
+ * @param {Object} factura - Datos de la factura
+ * @returns {Promise} Resultado del proceso
+ */
+const procesarFacturaSRI = async (factura) => {
+  try {
+    const supabase = await getConnection();
+    
+    // 1. Obtener datos completos
+    const { data: facturaCompleta } = await supabase
+      .from('factura_electronica')
+      .select(`
+        *,
+        clientes:id_cliente (*),
+        emisor:id_emisor (*),
+        usuarios:id_usuario (*),
+        detalle_factura (*)
+      `)
+      .eq('id_factura', factura.id_factura)
+      .single();
+
+    // 2. Generar XML
+    const xmlSinFirma = await SRIService.generarXML(facturaCompleta);
+    
+    // Guardar XML sin firma
+    const pathXmlSinFirma = path.join(process.cwd(), 'comprobantes', 'no-firmados', `${factura.clave_acceso}.xml`);
+    fs.writeFileSync(pathXmlSinFirma, xmlSinFirma);
+
+    // 3. Firmar XML
+    const xmlFirmado = await SRIService.firmarXML(
+      xmlSinFirma,
+      facturaCompleta.emisor.certificado_path,
+      facturaCompleta.emisor.contrasena_certificado
+    );
+
+    // Guardar XML firmado
+    const pathXmlFirmado = path.join(process.cwd(), 'comprobantes', 'firmados', `${factura.clave_acceso}.xml`);
+    fs.writeFileSync(pathXmlFirmado, xmlFirmado);
+
+    // 4. Enviar al SRI
+    const esProduccion = facturaCompleta.emisor.tipo_ambiente === '2';
+    const respuestaRecepcion = await SRIService.enviarComprobante(xmlFirmado, esProduccion);
+
+    if (respuestaRecepcion.estado === 'RECIBIDA') {
+      // 5. Solicitar autorización
+      const respuestaAutorizacion = await SRIService.autorizarComprobante(factura.clave_acceso, esProduccion);
+
+      if (respuestaAutorizacion.estado === 'AUTORIZADO') {
+        // Guardar XML autorizado
+        const pathXmlAutorizado = path.join(process.cwd(), 'comprobantes', 'autorizados', `${factura.clave_acceso}.xml`);
+        fs.writeFileSync(pathXmlAutorizado, respuestaAutorizacion.comprobante);
+
+        // Generar PDF
+        const pdfBuffer = await SRIService.generarPDF(facturaCompleta, respuestaAutorizacion.comprobante);
+        const pathPdf = path.join(process.cwd(), 'comprobantes', 'pdf', `${factura.clave_acceso}.pdf`);
+        fs.writeFileSync(pathPdf, pdfBuffer);
+
+        // Actualizar factura
+        await supabase
+          .from('factura_electronica')
+          .update({
+            estado: 'A',
+            fecha_autorizacion: new Date().toISOString(),
+            xml_autorizado: respuestaAutorizacion.comprobante,
+            pdf_path: pathPdf
+          })
+          .eq('id_factura', factura.id_factura);
+
+        return {
+          success: true,
+          message: 'Factura autorizada correctamente',
+          numero_autorizacion: respuestaAutorizacion.numeroAutorizacion
+        };
+      } else {
+        // Registrar error de autorización
+        throw new Error(`Error de autorización: ${respuestaAutorizacion.mensajes.join(', ')}`);
+      }
+    } else {
+      // Registrar error de recepción
+      throw new Error(`Error de recepción: ${respuestaRecepcion.mensajes.join(', ')}`);
+    }
+  } catch (error) {
+    // Registrar error en log
+    const supabase = await getConnection();
+    await supabase
+      .from('log_errores_factura')
+      .insert([{
+        id_factura: factura.id_factura,
+        descripcion: error.message
+      }]);
+
+    // Actualizar estado de la factura
+    await supabase
+      .from('factura_electronica')
+      .update({
+        estado: 'X'
+      })
+      .eq('id_factura', factura.id_factura);
+
+    throw error;
+  }
+};
+
+/**
+ * Endpoint para procesar una factura con el SRI
+ */
+export const procesarFactura = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const supabase = await getConnection();
+    const { data: factura, error } = await supabase
+      .from('factura_electronica')
+      .select('*')
+      .eq('id_factura', id)
+      .single();
+
+    if (error) throw error;
+    if (!factura) {
+      return res.status(404).json({
+        message: "Factura no encontrada"
+      });
+    }
+
+    const resultado = await procesarFacturaSRI(factura);
+    res.json(resultado);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      message: "Error procesando la factura",
+      details: error.message
+    });
+  }
 };
