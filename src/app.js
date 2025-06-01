@@ -4,6 +4,7 @@ import menuRoutes from "./routes/menu.routes.js";
 import invoicesRoutes from "./routes/invoices.routes.js";
 import categoriesRoutes from "./routes/categories.routes.js";
 import emisorRoutes from "./routes/emisor.routes.js";
+import clientRoutes from "./routes/clients.routes.js";
 
 import cors from "cors";
 
@@ -19,4 +20,5 @@ app.use("/api", menuRoutes);
 app.use("/api", invoicesRoutes);
 app.use("/api", categoriesRoutes);
 app.use("/api", emisorRoutes);
+app.use("/api", clientRoutes);
 export default app;
