@@ -18,23 +18,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: pg_database_owner
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
 
 CREATE SCHEMA public;
 
 
-ALTER SCHEMA public OWNER TO pg_database_owner;
-
 --
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: pg_database_owner
---
-
-COMMENT ON SCHEMA public IS 'standard public schema';
-
-
---
--- Name: inicializar_base_datos(); Type: PROCEDURE; Schema: public; Owner: postgres
+-- Name: inicializar_base_datos(); Type: PROCEDURE; Schema: public; Owner: -
 --
 
 CREATE PROCEDURE public.inicializar_base_datos()
@@ -546,10 +537,8 @@ END;
 $$;
 
 
-ALTER PROCEDURE public.inicializar_base_datos() OWNER TO postgres;
-
 --
--- Name: insertar_datos_prueba(); Type: PROCEDURE; Schema: public; Owner: postgres
+-- Name: insertar_datos_prueba(); Type: PROCEDURE; Schema: public; Owner: -
 --
 
 CREATE PROCEDURE public.insertar_datos_prueba()
@@ -755,10 +744,8 @@ END;
 $$;
 
 
-ALTER PROCEDURE public.insertar_datos_prueba() OWNER TO postgres;
-
 --
--- Name: limpiar_base_datos(); Type: PROCEDURE; Schema: public; Owner: postgres
+-- Name: limpiar_base_datos(); Type: PROCEDURE; Schema: public; Owner: -
 --
 
 CREATE PROCEDURE public.limpiar_base_datos()
@@ -846,10 +833,8 @@ END;
 $$;
 
 
-ALTER PROCEDURE public.limpiar_base_datos() OWNER TO postgres;
-
 --
--- Name: obtener_siguiente_secuencial(integer, character); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: obtener_siguiente_secuencial(integer, character); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.obtener_siguiente_secuencial(p_emisor_id integer, p_punto_emision character) RETURNS TABLE(siguiente_secuencial character, mensaje character varying)
@@ -999,14 +984,12 @@ END;
 $$;
 
 
-ALTER FUNCTION public.obtener_siguiente_secuencial(p_emisor_id integer, p_punto_emision character) OWNER TO postgres;
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: accesos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: accesos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.accesos (
@@ -1017,10 +1000,8 @@ CREATE TABLE public.accesos (
 );
 
 
-ALTER TABLE public.accesos OWNER TO postgres;
-
 --
--- Name: accesos_id_acceso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: accesos_id_acceso_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.accesos ALTER COLUMN id_acceso ADD GENERATED ALWAYS AS IDENTITY (
@@ -1034,7 +1015,7 @@ ALTER TABLE public.accesos ALTER COLUMN id_acceso ADD GENERATED ALWAYS AS IDENTI
 
 
 --
--- Name: categorias; Type: TABLE; Schema: public; Owner: postgres
+-- Name: categorias; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.categorias (
@@ -1045,10 +1026,8 @@ CREATE TABLE public.categorias (
 );
 
 
-ALTER TABLE public.categorias OWNER TO postgres;
-
 --
--- Name: categorias_id_categoria_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: categorias_id_categoria_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.categorias ALTER COLUMN id_categoria ADD GENERATED ALWAYS AS IDENTITY (
@@ -1062,7 +1041,7 @@ ALTER TABLE public.categorias ALTER COLUMN id_categoria ADD GENERATED ALWAYS AS 
 
 
 --
--- Name: clientes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: clientes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.clientes (
@@ -1078,10 +1057,8 @@ CREATE TABLE public.clientes (
 );
 
 
-ALTER TABLE public.clientes OWNER TO postgres;
-
 --
--- Name: clientes_id_cliente_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: clientes_id_cliente_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.clientes ALTER COLUMN id_cliente ADD GENERATED ALWAYS AS IDENTITY (
@@ -1095,7 +1072,7 @@ ALTER TABLE public.clientes ALTER COLUMN id_cliente ADD GENERATED ALWAYS AS IDEN
 
 
 --
--- Name: configuracion_sistema; Type: TABLE; Schema: public; Owner: postgres
+-- Name: configuracion_sistema; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.configuracion_sistema (
@@ -1107,10 +1084,8 @@ CREATE TABLE public.configuracion_sistema (
 );
 
 
-ALTER TABLE public.configuracion_sistema OWNER TO postgres;
-
 --
--- Name: configuracion_sistema_id_configuracion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: configuracion_sistema_id_configuracion_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.configuracion_sistema ALTER COLUMN id_configuracion ADD GENERATED ALWAYS AS IDENTITY (
@@ -1124,7 +1099,7 @@ ALTER TABLE public.configuracion_sistema ALTER COLUMN id_configuracion ADD GENER
 
 
 --
--- Name: configuracion_sri; Type: TABLE; Schema: public; Owner: postgres
+-- Name: configuracion_sri; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.configuracion_sri (
@@ -1138,10 +1113,8 @@ CREATE TABLE public.configuracion_sri (
 );
 
 
-ALTER TABLE public.configuracion_sri OWNER TO postgres;
-
 --
--- Name: configuracion_sri_id_configuracion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: configuracion_sri_id_configuracion_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.configuracion_sri ALTER COLUMN id_configuracion ADD GENERATED ALWAYS AS IDENTITY (
@@ -1155,7 +1128,7 @@ ALTER TABLE public.configuracion_sri ALTER COLUMN id_configuracion ADD GENERATED
 
 
 --
--- Name: detalle_factura; Type: TABLE; Schema: public; Owner: postgres
+-- Name: detalle_factura; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.detalle_factura (
@@ -1172,10 +1145,8 @@ CREATE TABLE public.detalle_factura (
 );
 
 
-ALTER TABLE public.detalle_factura OWNER TO postgres;
-
 --
--- Name: detalle_factura_id_detalle_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: detalle_factura_id_detalle_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.detalle_factura ALTER COLUMN id_detalle ADD GENERATED ALWAYS AS IDENTITY (
@@ -1189,7 +1160,7 @@ ALTER TABLE public.detalle_factura ALTER COLUMN id_detalle ADD GENERATED ALWAYS 
 
 
 --
--- Name: detalle_ingreso; Type: TABLE; Schema: public; Owner: postgres
+-- Name: detalle_ingreso; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.detalle_ingreso (
@@ -1202,10 +1173,8 @@ CREATE TABLE public.detalle_ingreso (
 );
 
 
-ALTER TABLE public.detalle_ingreso OWNER TO postgres;
-
 --
--- Name: detalle_ingreso_id_detalle_ingreso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: detalle_ingreso_id_detalle_ingreso_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.detalle_ingreso ALTER COLUMN id_detalle_ingreso ADD GENERATED ALWAYS AS IDENTITY (
@@ -1219,7 +1188,7 @@ ALTER TABLE public.detalle_ingreso ALTER COLUMN id_detalle_ingreso ADD GENERATED
 
 
 --
--- Name: emisor; Type: TABLE; Schema: public; Owner: postgres
+-- Name: emisor; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.emisor (
@@ -1240,10 +1209,8 @@ CREATE TABLE public.emisor (
 );
 
 
-ALTER TABLE public.emisor OWNER TO postgres;
-
 --
--- Name: emisor_id_emisor_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: emisor_id_emisor_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.emisor ALTER COLUMN id_emisor ADD GENERATED ALWAYS AS IDENTITY (
@@ -1257,7 +1224,7 @@ ALTER TABLE public.emisor ALTER COLUMN id_emisor ADD GENERATED ALWAYS AS IDENTIT
 
 
 --
--- Name: factura_electronica; Type: TABLE; Schema: public; Owner: postgres
+-- Name: factura_electronica; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.factura_electronica (
@@ -1273,14 +1240,14 @@ CREATE TABLE public.factura_electronica (
     xml_autorizado text,
     pdf_path character varying(500),
     fecha_registro timestamp(3) without time zone DEFAULT now() NOT NULL,
-    punto_emision character(3) NOT NULL
+    punto_emision character(3) NOT NULL,
+    ambiente_sri character varying(10) DEFAULT 'pruebas'::character varying NOT NULL,
+    CONSTRAINT factura_electronica_ambiente_sri_check CHECK (((ambiente_sri)::text = ANY ((ARRAY['pruebas'::character varying, 'produccion'::character varying])::text[])))
 );
 
 
-ALTER TABLE public.factura_electronica OWNER TO postgres;
-
 --
--- Name: factura_electronica_id_factura_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: factura_electronica_id_factura_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.factura_electronica ALTER COLUMN id_factura ADD GENERATED ALWAYS AS IDENTITY (
@@ -1294,7 +1261,7 @@ ALTER TABLE public.factura_electronica ALTER COLUMN id_factura ADD GENERATED ALW
 
 
 --
--- Name: forma_pago_factura; Type: TABLE; Schema: public; Owner: postgres
+-- Name: forma_pago_factura; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.forma_pago_factura (
@@ -1306,10 +1273,8 @@ CREATE TABLE public.forma_pago_factura (
 );
 
 
-ALTER TABLE public.forma_pago_factura OWNER TO postgres;
-
 --
--- Name: forma_pago_factura_id_pago_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: forma_pago_factura_id_pago_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.forma_pago_factura ALTER COLUMN id_pago ADD GENERATED ALWAYS AS IDENTITY (
@@ -1323,7 +1288,7 @@ ALTER TABLE public.forma_pago_factura ALTER COLUMN id_pago ADD GENERATED ALWAYS 
 
 
 --
--- Name: ingresos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: ingresos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.ingresos (
@@ -1335,10 +1300,8 @@ CREATE TABLE public.ingresos (
 );
 
 
-ALTER TABLE public.ingresos OWNER TO postgres;
-
 --
--- Name: ingresos_id_ingreso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: ingresos_id_ingreso_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.ingresos ALTER COLUMN id_ingreso ADD GENERATED ALWAYS AS IDENTITY (
@@ -1352,7 +1315,7 @@ ALTER TABLE public.ingresos ALTER COLUMN id_ingreso ADD GENERATED ALWAYS AS IDEN
 
 
 --
--- Name: log_errores_factura; Type: TABLE; Schema: public; Owner: postgres
+-- Name: log_errores_factura; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.log_errores_factura (
@@ -1363,10 +1326,8 @@ CREATE TABLE public.log_errores_factura (
 );
 
 
-ALTER TABLE public.log_errores_factura OWNER TO postgres;
-
 --
--- Name: log_errores_factura_id_error_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: log_errores_factura_id_error_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.log_errores_factura ALTER COLUMN id_error ADD GENERATED ALWAYS AS IDENTITY (
@@ -1380,7 +1341,7 @@ ALTER TABLE public.log_errores_factura ALTER COLUMN id_error ADD GENERATED ALWAY
 
 
 --
--- Name: menu; Type: TABLE; Schema: public; Owner: postgres
+-- Name: menu; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.menu (
@@ -1393,10 +1354,8 @@ CREATE TABLE public.menu (
 );
 
 
-ALTER TABLE public.menu OWNER TO postgres;
-
 --
--- Name: menu_id_menu_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: menu_id_menu_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.menu ALTER COLUMN id_menu ADD GENERATED ALWAYS AS IDENTITY (
@@ -1410,7 +1369,7 @@ ALTER TABLE public.menu ALTER COLUMN id_menu ADD GENERATED ALWAYS AS IDENTITY (
 
 
 --
--- Name: productos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: productos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.productos (
@@ -1426,10 +1385,8 @@ CREATE TABLE public.productos (
 );
 
 
-ALTER TABLE public.productos OWNER TO postgres;
-
 --
--- Name: productos_id_producto_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: productos_id_producto_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.productos ALTER COLUMN id_producto ADD GENERATED ALWAYS AS IDENTITY (
@@ -1443,7 +1400,7 @@ ALTER TABLE public.productos ALTER COLUMN id_producto ADD GENERATED ALWAYS AS ID
 
 
 --
--- Name: roles; Type: TABLE; Schema: public; Owner: postgres
+-- Name: roles; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.roles (
@@ -1454,10 +1411,8 @@ CREATE TABLE public.roles (
 );
 
 
-ALTER TABLE public.roles OWNER TO postgres;
-
 --
--- Name: roles_id_rol_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: roles_id_rol_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.roles ALTER COLUMN id_rol ADD GENERATED ALWAYS AS IDENTITY (
@@ -1471,7 +1426,7 @@ ALTER TABLE public.roles ALTER COLUMN id_rol ADD GENERATED ALWAYS AS IDENTITY (
 
 
 --
--- Name: usuarios; Type: TABLE; Schema: public; Owner: postgres
+-- Name: usuarios; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.usuarios (
@@ -1485,10 +1440,8 @@ CREATE TABLE public.usuarios (
 );
 
 
-ALTER TABLE public.usuarios OWNER TO postgres;
-
 --
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.usuarios ALTER COLUMN id_usuario ADD GENERATED ALWAYS AS IDENTITY (
@@ -1502,293 +1455,277 @@ ALTER TABLE public.usuarios ALTER COLUMN id_usuario ADD GENERATED ALWAYS AS IDEN
 
 
 --
--- Data for Name: accesos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: accesos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.accesos (id_acceso, id_menu, id_rol, fecha_registro) FROM stdin;
-1	1	1	2025-05-30 16:02:05.184
-2	2	1	2025-05-30 16:02:05.184
-3	3	1	2025-05-30 16:02:05.184
-4	4	1	2025-05-30 16:02:05.184
-5	1	2	2025-05-30 16:02:05.184
-6	2	2	2025-05-30 16:02:05.184
-7	4	2	2025-05-30 16:02:05.184
-8	1	3	2025-05-30 16:02:05.184
-9	3	3	2025-05-30 16:02:05.184
-\.
-
-
---
--- Data for Name: categorias; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.categorias (id_categoria, nombre, estado, fecha_registro) FROM stdin;
-1	Electr├│nica	A	2025-05-30 16:02:05.184
-2	Ropa	A	2025-05-30 16:02:05.184
-3	Alimentos	A	2025-05-30 16:02:05.184
-\.
+INSERT INTO public.accesos OVERRIDING SYSTEM VALUE VALUES
+	(1, 1, 1, '2025-05-30 16:02:05.184'),
+	(2, 2, 1, '2025-05-30 16:02:05.184'),
+	(3, 3, 1, '2025-05-30 16:02:05.184'),
+	(4, 4, 1, '2025-05-30 16:02:05.184'),
+	(5, 1, 2, '2025-05-30 16:02:05.184'),
+	(6, 2, 2, '2025-05-30 16:02:05.184'),
+	(7, 4, 2, '2025-05-30 16:02:05.184'),
+	(8, 1, 3, '2025-05-30 16:02:05.184'),
+	(9, 3, 3, '2025-05-30 16:02:05.184');
 
 
 --
--- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: categorias; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.clientes (id_cliente, nombre, apellido, cedula_ruc, direccion, telefono, email, estado, fecha_registro) FROM stdin;
-1	Ana	Rodr├¡guez	1234567890	Av. Principal 123	0991234567	ana@email.com	A	2025-05-30 16:02:05.184
-2	Luis	Mart├¡nez	9876543210	Calle Secundaria 456	0997654321	luis@email.com	A	2025-05-30 16:02:05.184
-\.
-
-
---
--- Data for Name: configuracion_sistema; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.configuracion_sistema (id_configuracion, clave, valor, descripcion, fecha_modificacion) FROM stdin;
-1	MAX_FACTURAS_DIA	100	M├íximo de facturas por d├¡a	2025-05-30 16:02:05.184
-2	IVA_DEFAULT	0.15	Porcentaje de IVA por defecto	2025-05-30 16:02:05.184
-\.
+INSERT INTO public.categorias OVERRIDING SYSTEM VALUE VALUES
+	(1, 'Electr├│nica', 'A', '2025-05-30 16:02:05.184'),
+	(2, 'Ropa', 'A', '2025-05-30 16:02:05.184'),
+	(3, 'Alimentos', 'A', '2025-05-30 16:02:05.184');
 
 
 --
--- Data for Name: configuracion_sri; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.configuracion_sri (id_configuracion, url_pruebas, url_produccion, fecha_vigencia_inicio, fecha_vigencia_fin, descripcion, fecha_registro) FROM stdin;
-1	https://celcer.sri.gob.ec/	https://cel.sri.gob.ec/	2025-01-01	2025-12-31	Configuraci├│n SRI 2025	2025-05-30 16:02:05.184
-\.
-
-
---
--- Data for Name: detalle_factura; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.detalle_factura (id_detalle, id_factura, id_producto, descripcion, cantidad, precio_unitario, subtotal, iva, total, fecha_registro) FROM stdin;
-1	1	1	Laptop HP 14 pulgadas	2.00	799.99	1599.98	240.00	1839.98	2025-05-30 16:02:05.184
-2	1	2	Camiseta Azul	3.00	19.99	59.97	9.00	68.97	2025-05-30 16:02:05.184
-3	2	3	Arroz 1kg	5.00	1.50	7.50	1.13	8.63	2025-05-30 16:02:05.184
-\.
+INSERT INTO public.clientes OVERRIDING SYSTEM VALUE VALUES
+	(2, 'Luis', 'Mart├¡nez', '9876543210', 'Calle Secundaria 456', '0997654321', 'luis@email.com', 'A', '2025-05-30 16:02:05.184'),
+	(1, 'Ana', 'Rodr├¡guez', '0928017243', 'Av. Principal 123', '0991234567', 'ana@email.com', 'A', '2025-05-30 16:02:05.184');
 
 
 --
--- Data for Name: detalle_ingreso; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: configuracion_sistema; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.detalle_ingreso (id_detalle_ingreso, id_ingreso, id_producto, cantidad, precio, fecha_registro) FROM stdin;
-1	1	1	10.00	700.00	2025-05-30 16:02:05.184
-2	1	2	20.00	15.00	2025-05-30 16:02:05.184
-3	2	3	100.00	1.20	2025-05-30 16:02:05.184
-\.
+INSERT INTO public.configuracion_sistema OVERRIDING SYSTEM VALUE VALUES
+	(1, 'MAX_FACTURAS_DIA', '100', 'M├íximo de facturas por d├¡a', '2025-05-30 16:02:05.184'),
+	(2, 'IVA_DEFAULT', '0.15', 'Porcentaje de IVA por defecto', '2025-05-30 16:02:05.184');
 
 
 --
--- Data for Name: emisor; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: configuracion_sri; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.emisor (id_emisor, ruc, razon_social, nombre_comercial, direccion, codigo_establecimiento, punto_emision, tipo_ambiente, obligado_contabilidad, certificado_path, contrasena_certificado, logo, fecha_registro, fecha_vencimiento_certificado) FROM stdin;
-1	1234567890001	Comercial Syntory S.A.	Syntory	Av. Central 789	001	001	1	t	C:/certificados/syntory.p12	mypassword123	\N	2025-05-30 16:02:05.184	2026-04-19
-\.
-
-
---
--- Data for Name: factura_electronica; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.factura_electronica (id_factura, id_emisor, id_cliente, id_usuario, clave_acceso, numero_secuencial, fecha_emision, estado, fecha_autorizacion, xml_autorizado, pdf_path, fecha_registro, punto_emision) FROM stdin;
-1	1	1	1	01012025011234567890001001001000000000112345678  	000000001	2025-04-19	A	2025-05-30 16:02:05.184	\N	\N	2025-05-30 16:02:05.184	001
-2	1	2	2	01012025011234567890001001001000000000212345678  	000000002	2025-04-19	A	2025-05-30 16:02:05.184	\N	\N	2025-05-30 16:02:05.184	001
-\.
+INSERT INTO public.configuracion_sri OVERRIDING SYSTEM VALUE VALUES
+	(1, 'https://celcer.sri.gob.ec/', 'https://cel.sri.gob.ec/', '2025-01-01', '2025-12-31', 'Configuraci├│n SRI 2025', '2025-05-30 16:02:05.184');
 
 
 --
--- Data for Name: forma_pago_factura; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: detalle_factura; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.forma_pago_factura (id_pago, id_factura, forma_pago, valor_pago, fecha_registro) FROM stdin;
-1	1	Efectivo	1839.98	2025-05-30 16:02:05.184
-2	1	Tarjeta	68.97	2025-05-30 16:02:05.184
-3	2	Transferencia	8.63	2025-05-30 16:02:05.184
-\.
-
-
---
--- Data for Name: ingresos; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.ingresos (id_ingreso, id_usuario, total, fecha, estado) FROM stdin;
-1	1	2000.00	2025-05-30 16:02:05.184	A
-2	3	150.00	2025-05-30 16:02:05.184	A
-\.
+INSERT INTO public.detalle_factura OVERRIDING SYSTEM VALUE VALUES
+	(1, 1, 1, 'Laptop HP 14 pulgadas', 2.00, 799.99, 1599.98, 240.00, 1839.98, '2025-05-30 16:02:05.184'),
+	(2, 1, 2, 'Camiseta Azul', 3.00, 19.99, 59.97, 9.00, 68.97, '2025-05-30 16:02:05.184'),
+	(3, 2, 3, 'Arroz 1kg', 5.00, 1.50, 7.50, 1.13, 8.63, '2025-05-30 16:02:05.184');
 
 
 --
--- Data for Name: log_errores_factura; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: detalle_ingreso; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.log_errores_factura (id_error, id_factura, descripcion, fecha_error) FROM stdin;
-1	1	Error de conexi├│n con el SRI	2025-05-30 16:02:05.184
-2	2	Clave de acceso inv├ílida	2025-05-30 16:02:05.184
-\.
-
-
---
--- Data for Name: menu; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.menu (id_menu, nombre, url, icon, estado, fecha_registro) FROM stdin;
-1	Inicio	/tabs/home	home	A	2025-05-30 16:02:05.184
-2	Facturas	/tabs/facturas	document	A	2025-05-30 16:02:05.184
-3	Inventario	/tabs/productos	cube	A	2025-05-30 16:02:05.184
-4	Clientes	/tabs/clientes	people	A	2025-05-30 16:02:05.184
-\.
+INSERT INTO public.detalle_ingreso OVERRIDING SYSTEM VALUE VALUES
+	(1, 1, 1, 10.00, 700.00, '2025-05-30 16:02:05.184'),
+	(2, 1, 2, 20.00, 15.00, '2025-05-30 16:02:05.184'),
+	(3, 2, 3, 100.00, 1.20, '2025-05-30 16:02:05.184');
 
 
 --
--- Data for Name: productos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: emisor; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.productos (id_producto, codigo, nombre, precio_venta, stock_actual, iva, id_categoria, estado, fecha_registro) FROM stdin;
-1	PROD001	Laptop HP	799.99	50	0.15	1	A	2025-05-30 16:02:05.184
-2	PROD002	Camiseta Azul	19.99	100	0.15	2	A	2025-05-30 16:02:05.184
-3	PROD003	Arroz 1kg	1.50	200	0.15	3	A	2025-05-30 16:02:05.184
-\.
+INSERT INTO public.emisor OVERRIDING SYSTEM VALUE VALUES
+	(1, '2450646365001', 'KODAKA YAGUAL IMIRSY KHIABET', 'K-TECH', 'SANTA ELENA / LA LIBERTAD / LA LIBERTAD / GUAYAQUIL S/N Y AV 4A	', '002', '100', '1', false, 'C:/certificados/syntory.p12', 'Hmviid1809', NULL, '2022-01-20 00:00:00', '2026-04-19');
 
 
 --
--- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: factura_electronica; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.roles (id_rol, rol, estado, fecha_registro) FROM stdin;
-1	Administrador	A	2025-05-30 16:02:05.184
-2	Vendedor	A	2025-05-30 16:02:05.184
-3	Inventario	A	2025-05-30 16:02:05.184
-\.
+INSERT INTO public.factura_electronica OVERRIDING SYSTEM VALUE VALUES
+	(1, 1, 1, 1, '01012025011234567890001001001000000000112345678  ', '000000001', '2025-04-19', 'A', '2025-05-30 16:02:05.184', NULL, NULL, '2025-05-30 16:02:05.184', '001', 'pruebas'),
+	(2, 1, 2, 2, '01012025011234567890001001001000000000212345678  ', '000000002', '2025-04-19', 'A', '2025-05-30 16:02:05.184', NULL, NULL, '2025-05-30 16:02:05.184', '001', 'pruebas');
 
 
 --
--- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: forma_pago_factura; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.usuarios (id_usuario, id_rol, nombre_completo, username, password, estado, fecha_registro) FROM stdin;
-1	1	Juan P├®rez	juanperez	hashedpassword123	A	2025-05-30 16:02:05.184
-2	2	Mar├¡a G├│mez	mariagomez	hashedpassword456	A	2025-05-30 16:02:05.184
-3	3	Carlos L├│pez	carloslopez	hashedpassword789	A	2025-05-30 16:02:05.184
-\.
+INSERT INTO public.forma_pago_factura OVERRIDING SYSTEM VALUE VALUES
+	(1, 1, 'Efectivo', 1839.98, '2025-05-30 16:02:05.184'),
+	(2, 1, 'Tarjeta', 68.97, '2025-05-30 16:02:05.184'),
+	(3, 2, 'Transferencia', 8.63, '2025-05-30 16:02:05.184');
 
 
 --
--- Name: accesos_id_acceso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Data for Name: ingresos; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.ingresos OVERRIDING SYSTEM VALUE VALUES
+	(1, 1, 2000.00, '2025-05-30 16:02:05.184', 'A'),
+	(2, 3, 150.00, '2025-05-30 16:02:05.184', 'A');
+
+
+--
+-- Data for Name: log_errores_factura; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.log_errores_factura OVERRIDING SYSTEM VALUE VALUES
+	(1, 1, 'Error de conexi├│n con el SRI', '2025-05-30 16:02:05.184'),
+	(2, 2, 'Clave de acceso inv├ílida', '2025-05-30 16:02:05.184');
+
+
+--
+-- Data for Name: menu; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.menu OVERRIDING SYSTEM VALUE VALUES
+	(1, 'Inicio', '/tabs/home', 'home', 'A', '2025-05-30 16:02:05.184'),
+	(2, 'Facturas', '/tabs/facturas', 'document', 'A', '2025-05-30 16:02:05.184'),
+	(3, 'Inventario', '/tabs/productos', 'cube', 'A', '2025-05-30 16:02:05.184'),
+	(4, 'Clientes', '/tabs/clientes', 'people', 'A', '2025-05-30 16:02:05.184');
+
+
+--
+-- Data for Name: productos; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.productos OVERRIDING SYSTEM VALUE VALUES
+	(1, 'PROD001', 'Laptop HP', 799.99, 50, 0.15, 1, 'A', '2025-05-30 16:02:05.184'),
+	(2, 'PROD002', 'Camiseta Azul', 19.99, 100, 0.15, 2, 'A', '2025-05-30 16:02:05.184'),
+	(3, 'PROD003', 'Arroz 1kg', 1.50, 200, 0.15, 3, 'A', '2025-05-30 16:02:05.184');
+
+
+--
+-- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.roles OVERRIDING SYSTEM VALUE VALUES
+	(1, 'Administrador', 'A', '2025-05-30 16:02:05.184'),
+	(2, 'Vendedor', 'A', '2025-05-30 16:02:05.184'),
+	(3, 'Inventario', 'A', '2025-05-30 16:02:05.184');
+
+
+--
+-- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.usuarios OVERRIDING SYSTEM VALUE VALUES
+	(1, 1, 'Juan P├®rez', 'juanperez', 'hashedpassword123', 'A', '2025-05-30 16:02:05.184'),
+	(2, 2, 'Mar├¡a G├│mez', 'mariagomez', 'hashedpassword456', 'A', '2025-05-30 16:02:05.184'),
+	(3, 3, 'Carlos L├│pez', 'carloslopez', 'hashedpassword789', 'A', '2025-05-30 16:02:05.184');
+
+
+--
+-- Name: accesos_id_acceso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.accesos_id_acceso_seq', 9, true);
 
 
 --
--- Name: categorias_id_categoria_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: categorias_id_categoria_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.categorias_id_categoria_seq', 3, true);
 
 
 --
--- Name: clientes_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: clientes_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.clientes_id_cliente_seq', 2, true);
 
 
 --
--- Name: configuracion_sistema_id_configuracion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: configuracion_sistema_id_configuracion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.configuracion_sistema_id_configuracion_seq', 2, true);
 
 
 --
--- Name: configuracion_sri_id_configuracion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: configuracion_sri_id_configuracion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.configuracion_sri_id_configuracion_seq', 1, true);
 
 
 --
--- Name: detalle_factura_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: detalle_factura_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.detalle_factura_id_detalle_seq', 3, true);
 
 
 --
--- Name: detalle_ingreso_id_detalle_ingreso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: detalle_ingreso_id_detalle_ingreso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.detalle_ingreso_id_detalle_ingreso_seq', 3, true);
 
 
 --
--- Name: emisor_id_emisor_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: emisor_id_emisor_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.emisor_id_emisor_seq', 1, true);
 
 
 --
--- Name: factura_electronica_id_factura_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: factura_electronica_id_factura_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.factura_electronica_id_factura_seq', 2, true);
+SELECT pg_catalog.setval('public.factura_electronica_id_factura_seq', 3, true);
 
 
 --
--- Name: forma_pago_factura_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: forma_pago_factura_id_pago_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.forma_pago_factura_id_pago_seq', 3, true);
 
 
 --
--- Name: ingresos_id_ingreso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: ingresos_id_ingreso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.ingresos_id_ingreso_seq', 2, true);
 
 
 --
--- Name: log_errores_factura_id_error_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: log_errores_factura_id_error_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.log_errores_factura_id_error_seq', 2, true);
 
 
 --
--- Name: menu_id_menu_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: menu_id_menu_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.menu_id_menu_seq', 4, true);
 
 
 --
--- Name: productos_id_producto_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: productos_id_producto_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.productos_id_producto_seq', 3, true);
 
 
 --
--- Name: roles_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: roles_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.roles_id_rol_seq', 3, true);
 
 
 --
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 3, true);
 
 
 --
--- Name: accesos pk_accesos; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: accesos pk_accesos; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.accesos
@@ -1796,7 +1733,7 @@ ALTER TABLE ONLY public.accesos
 
 
 --
--- Name: categorias pk_categorias; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: categorias pk_categorias; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.categorias
@@ -1804,7 +1741,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- Name: clientes pk_clientes; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: clientes pk_clientes; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.clientes
@@ -1812,7 +1749,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- Name: configuracion_sistema pk_configuracion_sistema; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: configuracion_sistema pk_configuracion_sistema; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.configuracion_sistema
@@ -1820,7 +1757,7 @@ ALTER TABLE ONLY public.configuracion_sistema
 
 
 --
--- Name: configuracion_sri pk_configuracion_sri; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: configuracion_sri pk_configuracion_sri; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.configuracion_sri
@@ -1828,7 +1765,7 @@ ALTER TABLE ONLY public.configuracion_sri
 
 
 --
--- Name: detalle_factura pk_detalle_factura; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: detalle_factura pk_detalle_factura; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.detalle_factura
@@ -1836,7 +1773,7 @@ ALTER TABLE ONLY public.detalle_factura
 
 
 --
--- Name: detalle_ingreso pk_detalle_ingreso; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: detalle_ingreso pk_detalle_ingreso; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.detalle_ingreso
@@ -1844,7 +1781,7 @@ ALTER TABLE ONLY public.detalle_ingreso
 
 
 --
--- Name: emisor pk_emisor; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: emisor pk_emisor; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.emisor
@@ -1852,7 +1789,7 @@ ALTER TABLE ONLY public.emisor
 
 
 --
--- Name: factura_electronica pk_factura_electronica; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: factura_electronica pk_factura_electronica; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.factura_electronica
@@ -1860,7 +1797,7 @@ ALTER TABLE ONLY public.factura_electronica
 
 
 --
--- Name: forma_pago_factura pk_forma_pago_factura; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: forma_pago_factura pk_forma_pago_factura; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.forma_pago_factura
@@ -1868,7 +1805,7 @@ ALTER TABLE ONLY public.forma_pago_factura
 
 
 --
--- Name: ingresos pk_ingresos; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: ingresos pk_ingresos; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.ingresos
@@ -1876,7 +1813,7 @@ ALTER TABLE ONLY public.ingresos
 
 
 --
--- Name: log_errores_factura pk_log_errores_factura; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: log_errores_factura pk_log_errores_factura; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.log_errores_factura
@@ -1884,7 +1821,7 @@ ALTER TABLE ONLY public.log_errores_factura
 
 
 --
--- Name: menu pk_menu; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: menu pk_menu; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.menu
@@ -1892,7 +1829,7 @@ ALTER TABLE ONLY public.menu
 
 
 --
--- Name: productos pk_productos; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: productos pk_productos; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.productos
@@ -1900,7 +1837,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- Name: roles pk_roles; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: roles pk_roles; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.roles
@@ -1908,7 +1845,7 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- Name: usuarios pk_usuarios; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: usuarios pk_usuarios; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.usuarios
@@ -1916,7 +1853,7 @@ ALTER TABLE ONLY public.usuarios
 
 
 --
--- Name: clientes uq_clientes_cedula_ruc; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: clientes uq_clientes_cedula_ruc; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.clientes
@@ -1924,7 +1861,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- Name: configuracion_sistema uq_configuracion_sistema_clave; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: configuracion_sistema uq_configuracion_sistema_clave; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.configuracion_sistema
@@ -1932,7 +1869,7 @@ ALTER TABLE ONLY public.configuracion_sistema
 
 
 --
--- Name: emisor uq_emisor_ruc; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: emisor uq_emisor_ruc; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.emisor
@@ -1940,7 +1877,7 @@ ALTER TABLE ONLY public.emisor
 
 
 --
--- Name: factura_electronica uq_factura_electronica_clave_acceso; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: factura_electronica uq_factura_electronica_clave_acceso; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.factura_electronica
@@ -1948,7 +1885,7 @@ ALTER TABLE ONLY public.factura_electronica
 
 
 --
--- Name: productos uq_productos_codigo; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: productos uq_productos_codigo; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.productos
@@ -1956,7 +1893,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- Name: usuarios uq_usuarios_username; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: usuarios uq_usuarios_username; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.usuarios
@@ -1964,126 +1901,126 @@ ALTER TABLE ONLY public.usuarios
 
 
 --
--- Name: ix_accesos_id_menu; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_accesos_id_menu; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_accesos_id_menu ON public.accesos USING btree (id_menu);
 
 
 --
--- Name: ix_accesos_id_rol; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_accesos_id_rol; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_accesos_id_rol ON public.accesos USING btree (id_rol);
 
 
 --
--- Name: ix_detalle_factura_id_factura; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_detalle_factura_id_factura; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_detalle_factura_id_factura ON public.detalle_factura USING btree (id_factura);
 
 
 --
--- Name: ix_detalle_factura_id_producto; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_detalle_factura_id_producto; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_detalle_factura_id_producto ON public.detalle_factura USING btree (id_producto);
 
 
 --
--- Name: ix_detalle_ingreso_id_ingreso; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_detalle_ingreso_id_ingreso; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_detalle_ingreso_id_ingreso ON public.detalle_ingreso USING btree (id_ingreso);
 
 
 --
--- Name: ix_detalle_ingreso_id_producto; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_detalle_ingreso_id_producto; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_detalle_ingreso_id_producto ON public.detalle_ingreso USING btree (id_producto);
 
 
 --
--- Name: ix_factura_electronica_fecha_emision; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_factura_electronica_fecha_emision; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_factura_electronica_fecha_emision ON public.factura_electronica USING btree (fecha_emision);
 
 
 --
--- Name: ix_factura_electronica_id_cliente; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_factura_electronica_id_cliente; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_factura_electronica_id_cliente ON public.factura_electronica USING btree (id_cliente);
 
 
 --
--- Name: ix_factura_electronica_id_emisor; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_factura_electronica_id_emisor; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_factura_electronica_id_emisor ON public.factura_electronica USING btree (id_emisor);
 
 
 --
--- Name: ix_factura_electronica_id_usuario; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_factura_electronica_id_usuario; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_factura_electronica_id_usuario ON public.factura_electronica USING btree (id_usuario);
 
 
 --
--- Name: ix_forma_pago_factura_id_factura; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_forma_pago_factura_id_factura; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_forma_pago_factura_id_factura ON public.forma_pago_factura USING btree (id_factura);
 
 
 --
--- Name: ix_ingresos_fecha; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_ingresos_fecha; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_ingresos_fecha ON public.ingresos USING btree (fecha);
 
 
 --
--- Name: ix_ingresos_id_usuario; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_ingresos_id_usuario; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_ingresos_id_usuario ON public.ingresos USING btree (id_usuario);
 
 
 --
--- Name: ix_log_errores_factura_fecha_error; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_log_errores_factura_fecha_error; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_log_errores_factura_fecha_error ON public.log_errores_factura USING btree (fecha_error);
 
 
 --
--- Name: ix_log_errores_factura_id_factura; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_log_errores_factura_id_factura; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_log_errores_factura_id_factura ON public.log_errores_factura USING btree (id_factura);
 
 
 --
--- Name: ix_productos_id_categoria; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_productos_id_categoria; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_productos_id_categoria ON public.productos USING btree (id_categoria);
 
 
 --
--- Name: ix_usuarios_id_rol; Type: INDEX; Schema: public; Owner: postgres
+-- Name: ix_usuarios_id_rol; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX ix_usuarios_id_rol ON public.usuarios USING btree (id_rol);
 
 
 --
--- Name: accesos fk_accesos_menu; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: accesos fk_accesos_menu; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.accesos
@@ -2091,7 +2028,7 @@ ALTER TABLE ONLY public.accesos
 
 
 --
--- Name: accesos fk_accesos_roles; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: accesos fk_accesos_roles; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.accesos
@@ -2099,7 +2036,7 @@ ALTER TABLE ONLY public.accesos
 
 
 --
--- Name: detalle_factura fk_detalle_factura_factura_electronica; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: detalle_factura fk_detalle_factura_factura_electronica; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.detalle_factura
@@ -2107,7 +2044,7 @@ ALTER TABLE ONLY public.detalle_factura
 
 
 --
--- Name: detalle_factura fk_detalle_factura_productos; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: detalle_factura fk_detalle_factura_productos; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.detalle_factura
@@ -2115,7 +2052,7 @@ ALTER TABLE ONLY public.detalle_factura
 
 
 --
--- Name: detalle_ingreso fk_detalle_ingreso_ingresos; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: detalle_ingreso fk_detalle_ingreso_ingresos; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.detalle_ingreso
@@ -2123,7 +2060,7 @@ ALTER TABLE ONLY public.detalle_ingreso
 
 
 --
--- Name: detalle_ingreso fk_detalle_ingreso_productos; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: detalle_ingreso fk_detalle_ingreso_productos; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.detalle_ingreso
@@ -2131,7 +2068,7 @@ ALTER TABLE ONLY public.detalle_ingreso
 
 
 --
--- Name: factura_electronica fk_factura_electronica_clientes; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: factura_electronica fk_factura_electronica_clientes; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.factura_electronica
@@ -2139,7 +2076,7 @@ ALTER TABLE ONLY public.factura_electronica
 
 
 --
--- Name: factura_electronica fk_factura_electronica_emisor; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: factura_electronica fk_factura_electronica_emisor; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.factura_electronica
@@ -2147,7 +2084,7 @@ ALTER TABLE ONLY public.factura_electronica
 
 
 --
--- Name: factura_electronica fk_factura_electronica_usuarios; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: factura_electronica fk_factura_electronica_usuarios; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.factura_electronica
@@ -2155,7 +2092,7 @@ ALTER TABLE ONLY public.factura_electronica
 
 
 --
--- Name: forma_pago_factura fk_forma_pago_factura_factura_electronica; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: forma_pago_factura fk_forma_pago_factura_factura_electronica; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.forma_pago_factura
@@ -2163,7 +2100,7 @@ ALTER TABLE ONLY public.forma_pago_factura
 
 
 --
--- Name: ingresos fk_ingresos_usuarios; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: ingresos fk_ingresos_usuarios; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.ingresos
@@ -2171,7 +2108,7 @@ ALTER TABLE ONLY public.ingresos
 
 
 --
--- Name: log_errores_factura fk_log_errores_factura_factura_electronica; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: log_errores_factura fk_log_errores_factura_factura_electronica; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.log_errores_factura
@@ -2179,7 +2116,7 @@ ALTER TABLE ONLY public.log_errores_factura
 
 
 --
--- Name: productos fk_productos_categorias; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: productos fk_productos_categorias; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.productos
@@ -2187,405 +2124,11 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- Name: usuarios fk_usuarios_roles; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: usuarios fk_usuarios_roles; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.usuarios
     ADD CONSTRAINT fk_usuarios_roles FOREIGN KEY (id_rol) REFERENCES public.roles(id_rol);
-
-
---
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: pg_database_owner
---
-
-GRANT USAGE ON SCHEMA public TO postgres;
-GRANT USAGE ON SCHEMA public TO anon;
-GRANT USAGE ON SCHEMA public TO authenticated;
-GRANT USAGE ON SCHEMA public TO service_role;
-
-
---
--- Name: PROCEDURE inicializar_base_datos(); Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON PROCEDURE public.inicializar_base_datos() TO anon;
-GRANT ALL ON PROCEDURE public.inicializar_base_datos() TO authenticated;
-GRANT ALL ON PROCEDURE public.inicializar_base_datos() TO service_role;
-
-
---
--- Name: PROCEDURE insertar_datos_prueba(); Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON PROCEDURE public.insertar_datos_prueba() TO anon;
-GRANT ALL ON PROCEDURE public.insertar_datos_prueba() TO authenticated;
-GRANT ALL ON PROCEDURE public.insertar_datos_prueba() TO service_role;
-
-
---
--- Name: PROCEDURE limpiar_base_datos(); Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON PROCEDURE public.limpiar_base_datos() TO anon;
-GRANT ALL ON PROCEDURE public.limpiar_base_datos() TO authenticated;
-GRANT ALL ON PROCEDURE public.limpiar_base_datos() TO service_role;
-
-
---
--- Name: FUNCTION obtener_siguiente_secuencial(p_emisor_id integer, p_punto_emision character); Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON FUNCTION public.obtener_siguiente_secuencial(p_emisor_id integer, p_punto_emision character) TO anon;
-GRANT ALL ON FUNCTION public.obtener_siguiente_secuencial(p_emisor_id integer, p_punto_emision character) TO authenticated;
-GRANT ALL ON FUNCTION public.obtener_siguiente_secuencial(p_emisor_id integer, p_punto_emision character) TO service_role;
-
-
---
--- Name: TABLE accesos; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.accesos TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.accesos TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.accesos TO service_role;
-
-
---
--- Name: SEQUENCE accesos_id_acceso_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.accesos_id_acceso_seq TO anon;
-GRANT ALL ON SEQUENCE public.accesos_id_acceso_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.accesos_id_acceso_seq TO service_role;
-
-
---
--- Name: TABLE categorias; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.categorias TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.categorias TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.categorias TO service_role;
-
-
---
--- Name: SEQUENCE categorias_id_categoria_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.categorias_id_categoria_seq TO anon;
-GRANT ALL ON SEQUENCE public.categorias_id_categoria_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.categorias_id_categoria_seq TO service_role;
-
-
---
--- Name: TABLE clientes; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.clientes TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.clientes TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.clientes TO service_role;
-
-
---
--- Name: SEQUENCE clientes_id_cliente_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.clientes_id_cliente_seq TO anon;
-GRANT ALL ON SEQUENCE public.clientes_id_cliente_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.clientes_id_cliente_seq TO service_role;
-
-
---
--- Name: TABLE configuracion_sistema; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.configuracion_sistema TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.configuracion_sistema TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.configuracion_sistema TO service_role;
-
-
---
--- Name: SEQUENCE configuracion_sistema_id_configuracion_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.configuracion_sistema_id_configuracion_seq TO anon;
-GRANT ALL ON SEQUENCE public.configuracion_sistema_id_configuracion_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.configuracion_sistema_id_configuracion_seq TO service_role;
-
-
---
--- Name: TABLE configuracion_sri; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.configuracion_sri TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.configuracion_sri TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.configuracion_sri TO service_role;
-
-
---
--- Name: SEQUENCE configuracion_sri_id_configuracion_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.configuracion_sri_id_configuracion_seq TO anon;
-GRANT ALL ON SEQUENCE public.configuracion_sri_id_configuracion_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.configuracion_sri_id_configuracion_seq TO service_role;
-
-
---
--- Name: TABLE detalle_factura; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.detalle_factura TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.detalle_factura TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.detalle_factura TO service_role;
-
-
---
--- Name: SEQUENCE detalle_factura_id_detalle_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.detalle_factura_id_detalle_seq TO anon;
-GRANT ALL ON SEQUENCE public.detalle_factura_id_detalle_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.detalle_factura_id_detalle_seq TO service_role;
-
-
---
--- Name: TABLE detalle_ingreso; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.detalle_ingreso TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.detalle_ingreso TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.detalle_ingreso TO service_role;
-
-
---
--- Name: SEQUENCE detalle_ingreso_id_detalle_ingreso_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.detalle_ingreso_id_detalle_ingreso_seq TO anon;
-GRANT ALL ON SEQUENCE public.detalle_ingreso_id_detalle_ingreso_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.detalle_ingreso_id_detalle_ingreso_seq TO service_role;
-
-
---
--- Name: TABLE emisor; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.emisor TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.emisor TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.emisor TO service_role;
-
-
---
--- Name: SEQUENCE emisor_id_emisor_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.emisor_id_emisor_seq TO anon;
-GRANT ALL ON SEQUENCE public.emisor_id_emisor_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.emisor_id_emisor_seq TO service_role;
-
-
---
--- Name: TABLE factura_electronica; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.factura_electronica TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.factura_electronica TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.factura_electronica TO service_role;
-
-
---
--- Name: SEQUENCE factura_electronica_id_factura_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.factura_electronica_id_factura_seq TO anon;
-GRANT ALL ON SEQUENCE public.factura_electronica_id_factura_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.factura_electronica_id_factura_seq TO service_role;
-
-
---
--- Name: TABLE forma_pago_factura; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.forma_pago_factura TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.forma_pago_factura TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.forma_pago_factura TO service_role;
-
-
---
--- Name: SEQUENCE forma_pago_factura_id_pago_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.forma_pago_factura_id_pago_seq TO anon;
-GRANT ALL ON SEQUENCE public.forma_pago_factura_id_pago_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.forma_pago_factura_id_pago_seq TO service_role;
-
-
---
--- Name: TABLE ingresos; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ingresos TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ingresos TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.ingresos TO service_role;
-
-
---
--- Name: SEQUENCE ingresos_id_ingreso_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.ingresos_id_ingreso_seq TO anon;
-GRANT ALL ON SEQUENCE public.ingresos_id_ingreso_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.ingresos_id_ingreso_seq TO service_role;
-
-
---
--- Name: TABLE log_errores_factura; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.log_errores_factura TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.log_errores_factura TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.log_errores_factura TO service_role;
-
-
---
--- Name: SEQUENCE log_errores_factura_id_error_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.log_errores_factura_id_error_seq TO anon;
-GRANT ALL ON SEQUENCE public.log_errores_factura_id_error_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.log_errores_factura_id_error_seq TO service_role;
-
-
---
--- Name: TABLE menu; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.menu TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.menu TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.menu TO service_role;
-
-
---
--- Name: SEQUENCE menu_id_menu_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.menu_id_menu_seq TO anon;
-GRANT ALL ON SEQUENCE public.menu_id_menu_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.menu_id_menu_seq TO service_role;
-
-
---
--- Name: TABLE productos; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.productos TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.productos TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.productos TO service_role;
-
-
---
--- Name: SEQUENCE productos_id_producto_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.productos_id_producto_seq TO anon;
-GRANT ALL ON SEQUENCE public.productos_id_producto_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.productos_id_producto_seq TO service_role;
-
-
---
--- Name: TABLE roles; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.roles TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.roles TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.roles TO service_role;
-
-
---
--- Name: SEQUENCE roles_id_rol_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.roles_id_rol_seq TO anon;
-GRANT ALL ON SEQUENCE public.roles_id_rol_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.roles_id_rol_seq TO service_role;
-
-
---
--- Name: TABLE usuarios; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.usuarios TO anon;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.usuarios TO authenticated;
-GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE public.usuarios TO service_role;
-
-
---
--- Name: SEQUENCE usuarios_id_usuario_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.usuarios_id_usuario_seq TO anon;
-GRANT ALL ON SEQUENCE public.usuarios_id_usuario_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.usuarios_id_usuario_seq TO service_role;
-
-
---
--- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: postgres
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
-
-
---
--- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: supabase_admin
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
-
-
---
--- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: postgres
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO service_role;
-
-
---
--- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: supabase_admin
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON FUNCTIONS TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON FUNCTIONS TO service_role;
-
-
---
--- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO service_role;
-
-
---
--- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: supabase_admin
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT SELECT,INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLES TO service_role;
 
 
 --

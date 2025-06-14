@@ -8,10 +8,27 @@ export const getClients = async (req, res) => {
     const supabase = await getConnection();
     const { data, error } = await supabase      .from('clientes')
       .select('*')
-      .eq('estado', 'S')
+      .eq('estado', 'A')
       .order('id_cliente');
 
     if (error) throw error;
+
+    // Para cada cliente, buscar su última factura para mostrarla como última compra
+    if (data && data.length > 0) {
+      for (let cliente of data) {
+        const { data: ultimaFactura, error: errorFactura } = await supabase
+          .from('factura_electronica')
+          .select('fecha_emision')
+          .eq('id_cliente', cliente.id_cliente)
+          .order('fecha_emision', { ascending: false })
+          .limit(1);
+        
+        if (!errorFactura && ultimaFactura && ultimaFactura.length > 0) {
+          cliente.ultima_compra = ultimaFactura[0].fecha_emision;
+        }
+      }
+    }
+
     res.json(data || []);
   } catch (error) {
     console.error('Error:', error);
@@ -93,9 +110,7 @@ export const createClient = async (req, res) => {
       return res.status(400).json({
         message: "Ya existe un cliente con esta identificación"
       });
-    }
-
-    // Crear el nuevo cliente
+    }    // Crear el nuevo cliente
     const { data, error } = await supabase
       .from('clientes')
       .insert([{
@@ -104,7 +119,9 @@ export const createClient = async (req, res) => {
         cedula_ruc,
         direccion,
         telefono,
-        email,        estado: 'S'
+        email,
+        tipo_identificacion: req.body.tipo_identificacion, // Añadido tipo de identificación
+        estado: 'A' // Corregido a 'A' para estado Activo
       }])
       .select()
       .single();
@@ -139,9 +156,7 @@ export const updateClient = async (req, res) => {
       return res.status(404).json({
         message: "Cliente no encontrado"
       });
-    }
-
-    // Actualizar cliente
+    }    // Actualizar cliente
     const { data, error } = await supabase
       .from('clientes')
       .update({
@@ -149,7 +164,9 @@ export const updateClient = async (req, res) => {
         apellido,
         direccion,
         telefono,
-        email,        estado: estado || 'S',
+        email,
+        tipo_identificacion: req.body.tipo_identificacion, // Añadido tipo de identificación
+        estado: estado || 'A', // Corregido a 'A' para estado Activo
       })
       .eq('id_cliente', req.params.id)
       .select()
@@ -186,11 +203,9 @@ export const deleteClient = async (req, res) => {
       return res.status(400).json({
         message: "No se puede eliminar el cliente porque tiene facturas asociadas"
       });
-    }
-
-    // Realizar eliminación lógica
+    }    // Realizar eliminación lógica
     const { error } = await supabase
-      .from('clientes')      .update({ estado: 'N' })
+      .from('clientes')      .update({ estado: 'I' }) // Cambiado a 'I' por inactivo
       .eq('id_cliente', req.params.id);
 
     if (error) throw error;

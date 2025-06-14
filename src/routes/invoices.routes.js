@@ -1,12 +1,13 @@
 import { Router } from "express";
-import {    getBill, 
+import {    
+    getBill, 
     getInvoices, 
     getLastInvoiceNumber,
     createInvoice,
     updateInvoiceStatus,
-    voidInvoice,
-    procesarFactura,
-    saveDraftInvoice
+    getInvoiceStatus,
+    getInvoiceStatusBySRI,
+    testSRIConnection
 } from "./../controllers/invoices.controllers.js";
 
 const router = Router();
@@ -14,13 +15,19 @@ const router = Router();
 // Consultas
 router.get("/bill", getInvoices);
 router.get("/bill/:id", getBill);
+router.get("/bill/:id/estado", getInvoiceStatus);
 router.get("/bill/last-number/:emisorId/:puntoEmision", getLastInvoiceNumber);
+
+// Consultas SRI
+router.get("/bill/sri-status/:clave_acceso", getInvoiceStatusBySRI);
+router.get("/sri/test-connection", testSRIConnection);
 
 // Operaciones
 router.post("/bill", createInvoice);
 router.put("/bill/:id/status", updateInvoiceStatus);
-router.put("/bill/:id/void", voidInvoice);
-router.post("/bill/:id/process", procesarFactura);
-router.post("/bill/draft", saveDraftInvoice);
+
+// Rutas alternativas para compatibilidad con el frontend
+router.get("/facturas/:id/estado", getInvoiceStatus);
+router.get("/facturas/sri-status/:clave_acceso", getInvoiceStatusBySRI);
 
 export default router;
