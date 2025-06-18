@@ -11,8 +11,8 @@
 - 'X' - Error: Error en el proceso
 
 ### Estados de Clientes y Productos
-- 'S' - Activo
-- 'N' - Inactivo
+- 'A' - Activo
+- 'I' - Inactivo
 
 ## Endpoints
 

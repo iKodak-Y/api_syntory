@@ -7,7 +7,8 @@ import {
     updateInvoiceStatus,
     getInvoiceStatus,
     getInvoiceStatusBySRI,
-    testSRIConnection
+    testSRIConnection,
+    saveDraftInvoice
 } from "./../controllers/invoices.controllers.js";
 
 const router = Router();
@@ -24,6 +25,7 @@ router.get("/sri/test-connection", testSRIConnection);
 
 // Operaciones
 router.post("/bill", createInvoice);
+router.post("/bill/draft", saveDraftInvoice);
 router.put("/bill/:id/status", updateInvoiceStatus);
 
 // Rutas alternativas para compatibilidad con el frontend
