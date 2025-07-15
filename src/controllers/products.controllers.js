@@ -62,7 +62,9 @@ export const createProduct = async (req, res) => {
         {
           codigo: req.body.codigo,
           nombre: req.body.nombre,
+          descripcion: req.body.descripcion || null,
           precio_venta: req.body.precio_venta,
+          precio_costo: req.body.precio_costo || 0,
           stock_actual: req.body.stock_actual,
           iva: req.body.iva,
           id_categoria: req.body.id_categoria,
@@ -90,7 +92,9 @@ export const updateProduct = async (req, res) => {
       .update({
         codigo: req.body.codigo,
         nombre: req.body.nombre,
+        descripcion: req.body.descripcion,
         precio_venta: req.body.precio_venta,
+        precio_costo: req.body.precio_costo,
         stock_actual: req.body.stock_actual,
         iva: req.body.iva,
         id_categoria: req.body.id_categoria,

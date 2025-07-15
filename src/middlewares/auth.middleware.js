@@ -31,9 +31,14 @@ export const isAdmin = (req, res, next) => {
     return res.status(403).json({ message: "No user information available" });
   }
   
-  // Verificar si el usuario tiene rol de administrador (id_rol === 1)
-  if (req.user.id_rol !== 1) {
-    return res.status(403).json({ message: "Requiere privilegios de administrador" });
+  // Verificar si el usuario tiene rol de administrador (id_rol === 1 o rol === 1)
+  const userRole = req.user.id_rol || req.user.rol;
+  if (userRole !== 1) {
+    return res.status(403).json({ 
+      message: "Requiere privilegios de administrador",
+      userRole: userRole,
+      required: 1
+    });
   }
   
   next();

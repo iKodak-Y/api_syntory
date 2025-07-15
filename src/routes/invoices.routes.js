@@ -25,6 +25,8 @@ router.get("/sri/test-connection", testSRIConnection);
 
 // Operaciones
 router.post("/bill", createInvoice);
+router.post("/emitir", createInvoice); // Ruta específica para emisión de facturas
+router.post("/facturacion/emitir", createInvoice); // Ruta completa para compatibilidad con frontend
 router.post("/bill/draft", saveDraftInvoice);
 router.put("/bill/:id/status", updateInvoiceStatus);
 

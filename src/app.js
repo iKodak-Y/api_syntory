@@ -1,3 +1,6 @@
+// Importar configuración de zona horaria antes que cualquier otra importación
+import './config/timezone.config.js';
+
 import express from "express";
 import productRoutes from "./routes/products.routes.js";
 import menuRoutes from "./routes/menu.routes.js";
@@ -15,6 +18,7 @@ import bucketsRoutes from './routes/buckets.routes.js';
 import configuracionSistemaRoutes from './routes/configuracion-sistema.routes.js';
 import configuracionSriRoutes from './routes/configuracion-sri.routes.js';
 import facturacionElectronicaRoutes from './routes/facturacion-electronica.routes.js';
+import facturacionMejoradaRoutes from './routes/facturacion-mejorada.routes.js';
 import ventasRoutes from './routes/ventas.routes.js';
 
 import cors from "cors";
@@ -51,6 +55,7 @@ app.use('/api/roles', rolesRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api', facturacionElectronicaRoutes);
+app.use('/api/facturacion', facturacionMejoradaRoutes); // Nueva API mejorada
 app.use('/api/storage', storageRoutes);
 app.use('/api/buckets', bucketsRoutes);
 app.use('/api', configuracionSistemaRoutes);

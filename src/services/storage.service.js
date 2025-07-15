@@ -512,6 +512,25 @@ export class StorageService {  constructor() {
       throw error;
     }
   }
+
+  /**
+   * Verifica si un archivo existe en Supabase Storage
+   * @param {string} bucketName - Nombre del bucket
+   * @param {string} filePath - Ruta del archivo en el bucket
+   * @returns {Promise<boolean>} - true si el archivo existe
+   */  async fileExists(bucketName, filePath) {
+    try {
+      const { data, error } = await this.supabase.storage
+        .from(bucketName)
+        .download(filePath);
+
+      // Si no hay error y tenemos data, el archivo existe
+      return !error && data && data.size > 0;
+    } catch (error) {
+      // Si hay error, el archivo no existe
+      return false;
+    }
+  }
 }
 
 export default new StorageService();

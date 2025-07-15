@@ -1,11 +1,3 @@
-import {
-  generateInvoice,
-  generateInvoiceXml,
-  signXml,
-  documentReception,
-  documentAuthorization,
-  getP12FromLocalFile,
-} from "open-factura";
 import { getConnection } from "../database/connection.js";
 import fs from "fs";
 import path from "path";
@@ -16,6 +8,60 @@ import {
   enviarXmlSinFirma 
 } from "../services/facturacion-electronica.service.js";
 import { getDefaultIva } from "../services/config.service.js";
+import { generarClaveAcceso } from "../services/clave-acceso-sri.js";
+import { signXMLWithCertificate } from "../services/xml-signing.service.js";
+import { documentAuthorization, documentReception } from "../services/sri-facturacion.service.js";
+import { generateFacturaXML } from "../services/xml-generator.service.js";
+import { mapFormaPagoToSRI as mapFormaPagoSRI } from "../services/facturacion-electronica.service.js";
+
+// Función para mapear tipos de identificación a códigos SRI
+function mapTipoIdentificacionSRI(tipoIdentificacion, cedula) {
+  // Si se proporciona el número de identificación, intentar detectar el tipo
+  if (cedula) {
+    if (cedula === '9999999999999') return '07'; // Consumidor final
+    if (cedula.length === 13 && cedula.endsWith('001')) return '04'; // RUC
+    if (cedula.length === 10) return '05'; // Cédula
+  }
+  
+  // Si se proporciona el tipo explícito
+  const mapeo = {
+    'ruc': '04',
+    'cedula': '05', 
+    'pasaporte': '06',
+    'consumidor_final': '07',
+    'identificacion_exterior': '08',
+    'placa': '09'
+  };
+  
+  const normalizado = (tipoIdentificacion || "").toLowerCase().replace(/\s+/g, "_");
+  
+  // Códigos según especificaciones SRI
+  switch (normalizado) {
+    case '04':
+    case 'ruc': 
+    case 'r':
+      return '04';
+    case '05':
+    case 'cedula':
+    case 'c':
+      return '05';
+    case '06':
+    case 'pasaporte':
+    case 'p':
+      return '06';
+    case '07':
+    case 'consumidor_final':
+    case 'cf':
+      return '07';
+    case '08':
+    case 'identificacion_exterior':
+    case 'id_ext':
+      return '08';
+    default:
+      // Por defecto, consumidor final
+      return '07';
+  }
+}
 
 // URLs del SRI por ambiente
 const SRI_URLS = {
@@ -328,16 +374,18 @@ export const createInvoice = async (req, res) => {
     } else {
       secuencial = await getLastInvoiceNumberFromDB(emisor.id_emisor, punto_emision);
       console.log("Secuencial generado automáticamente:", secuencial);
-    }    // Configurar datos para open-factura (que generará automáticamente la clave de acceso)
-    console.log("Preparando configuración para open-factura...");
-      // Usar fecha proporcionada o fecha actual
+    }    // Configurar datos para la factura electrónica
+    console.log("Preparando configuración para la factura...");
+    // Usar fecha proporcionada o fecha actual
     const fechaEmisionOriginal = fecha_emision ? new Date(fecha_emision) : new Date();
     
-    const fechaFactura = fechaEmisionOriginal.toLocaleDateString("es-EC", {
-      day: "2-digit",
-      month: "2-digit", 
-      year: "numeric",
-    }).replace(/\//g, "/");
+    // Generar fecha consistente para XML y clave de acceso usando los mismos componentes
+    const dia = fechaEmisionOriginal.getDate().toString().padStart(2, '0');
+    const mes = (fechaEmisionOriginal.getMonth() + 1).toString().padStart(2, '0');
+    const anio = fechaEmisionOriginal.getFullYear().toString();
+    
+    // Para el XML usamos formato DD/MM/YYYY
+    const fechaFactura = `${dia}/${mes}/${anio}`;
     
     console.log("Fecha factura:", fechaFactura);
     console.log("Fecha emisión original:", fechaEmisionOriginal.toISOString());
@@ -377,9 +425,9 @@ export const createInvoice = async (req, res) => {
       },      infoFactura: {
         fechaEmision: fechaFactura,
         dirEstablecimiento: emisor.direccion,
-        contribuyenteEspecial: "", // Si aplica
+        // contribuyenteEspecial: OMITIDO - solo incluir si el emisor es contribuyente especial
         obligadoContabilidad: emisor.obligado_contabilidad ? "SI" : "NO",
-        tipoIdentificacionComprador: cliente.cedula_ruc.length === 13 ? "04" : "05",
+        tipoIdentificacionComprador: mapTipoIdentificacionSRI(cliente.tipo_identificacion, cliente.cedula_ruc),
         guiaRemision: "", // Si aplica
         razonSocialComprador: `${cliente.nombre} ${cliente.apellido || ""}`.trim(),
         identificacionComprador: cliente.cedula_ruc,
@@ -388,7 +436,7 @@ export const createInvoice = async (req, res) => {
         totalDescuento: detalles.reduce((sum, d) => sum + Number(d.descuento || 0), 0).toFixed(2),        totalConImpuestos: [
           {
             codigo: "2", // IVA
-            codigoPorcentaje: "2", // IVA - código 2 para Ecuador
+            codigoPorcentaje: "4", // CORREGIDO: código 4 para IVA 15% (antes era 2 que es para 12%)
             baseImponible: subtotalCalculado.toFixed(2),
             tarifa: (defaultIva * 100).toFixed(2), // Convertir a porcentaje con 2 decimales
             valor: ivaCalculado.toFixed(2),
@@ -399,7 +447,7 @@ export const createInvoice = async (req, res) => {
         moneda: "DOLAR",
         pagos: formas_pago.map((fp) => {
           // Mapear nombres del frontend a códigos SRI
-          const codigoFormaPago = mapFormaPagoFrontendToSRI(fp.forma_pago || fp.tipo);
+          const codigoFormaPago = mapFormaPagoSRI(fp.forma_pago || fp.tipo);
           console.log("Mapeando forma de pago:", fp.forma_pago || fp.tipo, "->", codigoFormaPago);
           
           return {
@@ -432,7 +480,7 @@ export const createInvoice = async (req, res) => {
           descuento: Number(d.descuento || 0).toFixed(2),
           precioTotalSinImpuesto: subtotalProducto.toFixed(2),          impuestos: [
             {              codigo: "2", // IVA
-              codigoPorcentaje: "2", // código 2 para IVA en Ecuador
+              codigoPorcentaje: "4", // CORREGIDO: código 4 para IVA 15% (antes era 2 que es para 12%)
               tarifa: (defaultIva * 100).toFixed(2), // Convertir a porcentaje con 2 decimales
               baseImponible: subtotalProducto.toFixed(2),
               valor: ivaValor.toFixed(2),
@@ -453,99 +501,55 @@ export const createInvoice = async (req, res) => {
             valor: info.descripcion || info.valor || "N/A"
           })) : [])
       ],
-    };    console.log("Generando factura con open-factura...");
+    };    console.log("Generando factura con generador XML personalizado...");
     console.log("Configuración de factura:", JSON.stringify(facturaConfig, null, 2));
     
     // Asegurarnos de que para ambiente de pruebas se use el código de ambiente correcto
     if (ambiente_sri === 'pruebas' && facturaConfig.infoTributaria.ambiente !== '1') {
       facturaConfig.infoTributaria.ambiente = '1'; // 1 = pruebas, 2 = producción
       console.log("Ajustado código de ambiente a '1' para pruebas");
-    }    // Generar factura electrónica y clave de acceso
-    console.log("Llamando a generateInvoice de open-factura...");
-    console.log("Configuración que se envía a open-factura:", JSON.stringify({
-      fecha: facturaConfig.infoFactura.fechaEmision,
-      ruc: facturaConfig.infoTributaria.ruc,
-      ambiente: facturaConfig.infoTributaria.ambiente,
-      establecimiento: facturaConfig.infoTributaria.estab,
-      puntoEmision: facturaConfig.infoTributaria.ptoEmi,
-      secuencial: facturaConfig.infoTributaria.secuencial
-    }, null, 2));
+    }    // Generar clave de acceso antes del XML
+    console.log("Generando clave de acceso...");
     
-    const { invoice, accessKey: originalAccessKey } = generateInvoice(facturaConfig);
-    console.log("Factura generada con clave de acceso original:", originalAccessKey);
-      // Validar clave de acceso y corregir si es necesario
-    const accessKeyData = {
-      fechaEmision: fechaEmisionOriginal, // Usar la fecha como objeto Date
+    // Usar las mismas variables de fecha ya declaradas arriba
+    // Formato DDMMAAAA (8 dígitos con año completo) para la clave de acceso
+    const fechaFormateada = `${dia}${mes}${anio}`;
+    
+    console.log(`📅 Fecha de emisión original: ${fechaEmisionOriginal}`);
+    console.log(`📅 Fecha para XML (DD/MM/YYYY): ${fechaFactura}`);
+    console.log(`🔑 Fecha para clave de acceso (DDMMAAAA): ${fechaFormateada}`);
+    
+    const accessKey = generarClaveAcceso({
+      fechaStr: fechaFormateada,
+      fechaEmision: fechaEmisionOriginal, // Pasar el objeto Date original
       ruc: emisor.ruc,
       ambiente: ambiente_sri,
       codigoEstablecimiento: emisor.codigo_establecimiento,
       puntoEmision: punto_emision,
       secuencial: secuencial
-    };
+    });
     
-    let accessKey = validarClaveAcceso(originalAccessKey, accessKeyData);
-    console.log("Clave de acceso validada/corregida:", accessKey);
+    console.log("Clave de acceso generada:", accessKey);
     
-    // Si la clave tiene problemas, generar una nueva
-    if (!accessKey || accessKey.includes('NaN') || !(/^\d{49}$/.test(accessKey))) {
-      console.log("La clave de acceso todavía no es válida, generando una nueva desde cero");
-      accessKey = generarClaveAccesoManual(accessKeyData);
-      console.log("Nueva clave de acceso generada manualmente:", accessKey);
-    }
+    // Actualizar la clave de acceso en la configuración
+    facturaConfig.infoTributaria.claveAcceso = accessKey;
     
-    // Actualizar la clave de acceso en el objeto factura
-    if (invoice && invoice.factura && invoice.factura.infoTributaria) {
-      invoice.factura.infoTributaria.claveAcceso = accessKey;
-    }
-    
-    // Generar XML
+    // Generar XML con nuestro generador personalizado
+    console.log("Generando XML con generador personalizado...");
     let invoiceXml;
     try {
-      invoiceXml = generateInvoiceXml(invoice);
+      invoiceXml = generateFacturaXML(facturaConfig);
     } catch (xmlError) {
-      console.error("Error al generar XML:", xmlError);
-      
-      // Forzar estructura correcta
-      const correctedInvoice = {
-        factura: {
-          "@xmlns:ds": "http://www.w3.org/2000/09/xmldsig#",
-          "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-          "@id": "comprobante",
-          "@version": "1.0.0",
-          "infoTributaria": { 
-            "ambiente": ambiente_sri === 'produccion' ? "2" : "1",
-            "tipoEmision": "1",
-            "razonSocial": emisor.razon_social,
-            "nombreComercial": emisor.nombre_comercial,
-            "ruc": emisor.ruc,
-            "claveAcceso": accessKey,
-            "codDoc": "01",
-            "estab": emisor.codigo_establecimiento,
-            "ptoEmi": punto_emision,
-            "secuencial": numero_secuencial || secuencial.padStart(9, '0'),
-            "dirMatriz": emisor.direccion
-          },
-          "infoFactura": {
-            // ... resto de la estructura
-          }
-        }
-      };
-      
-      try {
-        console.log("Intentando generar XML con estructura corregida");
-        invoiceXml = generateInvoiceXml(correctedInvoice);
-      } catch (retryError) {
-        console.error("Error al reintentar generación de XML:", retryError);
-        throw new Error(`No se pudo generar el XML: ${retryError.message}`);
-      }
+      console.error("Error al generar XML personalizado:", xmlError);
+      throw new Error(`No se pudo generar el XML: ${xmlError.message}`);
     }
     
-    // Validar que el XML se generó correctamente con más detalle
+    // Validar que el XML se generó correctamente
     if (!invoiceXml || invoiceXml.length === 0) {
       throw new Error("El XML generado está vacío o es inválido");
     }
     
-    // Validar elementos esenciales con logging detallado
+    // Validar elementos esenciales del XML
     console.log("Verificando estructura del XML...");
     console.log("Contiene '<factura':", invoiceXml.includes('<factura'));
     console.log("Contiene '<comprobante':", invoiceXml.includes('<comprobante'));
@@ -689,8 +693,12 @@ export const createInvoice = async (req, res) => {
         
         console.log("Resultado de recepción SRI:", JSON.stringify(receptionResult || {}, null, 2));
         
+        // Extraer la respuesta real del SRI (considerando la estructura de documentReception)
+        const respuestaSRI = receptionResult?.RespuestaRecepcionComprobante || receptionResult;
+        const estadoRecepcion = respuestaSRI?.estado;
+        
         // Si fue recibido o simulamos recepción
-        if (receptionResult && (receptionResult.estado === "RECIBIDA" || receptionResult.comprobante === "RECIBIDA" || receptionResult.simulado)) {
+        if (receptionResult && (estadoRecepcion === "RECIBIDA" || receptionResult.comprobante === "RECIBIDA" || receptionResult.simulado)) {
           console.log("✓ Documento recibido por el SRI o simulación");
           
           // Solicitar autorización
@@ -761,7 +769,9 @@ export const createInvoice = async (req, res) => {
           }
         } else {
           // Si fue rechazado en recepción
-          const mensajes = receptionResult?.mensajes || receptionResult?.informacionAdicional || ["Error desconocido en recepción"];
+          // Extraer mensajes de error considerando la estructura de documentReception
+          const respuestaSRI = receptionResult?.RespuestaRecepcionComprobante || receptionResult;
+          const mensajes = respuestaSRI?.mensajes || respuestaSRI?.informacionAdicional || ["Error desconocido en recepción"];
           console.log("✗ Documento rechazado en recepción:", mensajes);
           
           // En modo simulado, no fallamos por rechazo pero lo registramos
@@ -943,8 +953,12 @@ export const createInvoice = async (req, res) => {
         SRI_URLS[ambienteSRI].recepcion
       );      console.log("Resultado de recepción:", JSON.stringify(receptionResult, null, 2));
 
+      // Extraer la respuesta real del SRI (considerando la estructura de documentReception)
+      const respuestaSRI = receptionResult?.RespuestaRecepcionComprobante || receptionResult;
+      const estadoRecepcion = respuestaSRI?.estado;
+
       // Manejar diferentes estados de respuesta del SRI
-      if (receptionResult && (receptionResult.estado === "RECIBIDA" || receptionResult.comprobante === "RECIBIDA")) {
+      if (receptionResult && (estadoRecepcion === "RECIBIDA" || receptionResult.comprobante === "RECIBIDA")) {
         console.log("✓ Documento recibido exitosamente por el SRI");
         console.log("Solicitando autorización...");
         
@@ -1003,7 +1017,9 @@ export const createInvoice = async (req, res) => {
         
       } else {
         estadoSRI = "R"; // Rechazado en recepción
-        const mensajes = receptionResult?.mensajes || receptionResult?.informacionAdicional || ["Error desconocido en recepción"];
+        // Extraer mensajes de error considerando la estructura de documentReception
+        const respuestaSRI = receptionResult?.RespuestaRecepcionComprobante || receptionResult;
+        const mensajes = respuestaSRI?.mensajes || respuestaSRI?.informacionAdicional || ["Error desconocido en recepción"];
         console.log("✗ Documento rechazado en recepción:", mensajes);
         
         return res.status(400).json({

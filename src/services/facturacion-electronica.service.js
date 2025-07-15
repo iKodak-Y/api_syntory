@@ -4,8 +4,14 @@ import {
   signXml,
   documentReception,
   documentAuthorization,
-  getP12FromLocalFile,
-} from "open-factura";
+  generarClaveAcceso,
+} from "./sri-facturacion.service.js";
+import { generateFacturaXML } from "./xml-generator.service.js";
+import { generateFacturaXMLOficial } from "./xml-generator-oficial.service.js";
+import { generateFacturaXMLExacto } from "./xml-generator-exacto.service.js";
+import { generateFacturaXMLSimple } from "./xml-generator-simple.service.js";
+import { generateFacturaXMLSRIOficial } from "./xml-generator-sri-oficial.service.js";
+import { obtenerConfiguracionAmbienteSRI, validarCertificado } from "./ambiente-sri.service.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -19,16 +25,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = path.resolve(__dirname, "../..");
 
-// URLs del SRI por ambiente
+// URLs del SRI por ambiente - ACTUALIZADAS según documentación oficial 2025
 const SRI_URLS = {
   pruebas: {
-    // URLs para el ambiente de pruebas (Certificación)
+    // URLs para el ambiente de pruebas (Certificación) 
     recepcion: "https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl",
     autorizacion: "https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl"
   },
   produccion: {
     // URLs para ambiente de producción
-    recepcion: "https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl",
+    recepcion: "https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl", 
     autorizacion: "https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl"
   }
 };
@@ -40,62 +46,240 @@ const SRI_URLS = {
  */
 export async function generarFacturaElectronica(facturaConfig) {
   try {
-    console.log("Generando factura electrónica...");
+    console.log("🧾 === GENERANDO FACTURA ELECTRÓNICA SRI === 🧾");
+    console.log("📋 Configuración recibida:", JSON.stringify(facturaConfig, null, 2));
     
-    // Generar factura con open-factura
-    const { invoice, accessKey: originalAccessKey } = generateInvoice(facturaConfig);
-    console.log("Factura generada con clave de acceso original:", originalAccessKey);
+    // PASO CRÍTICO: Normalizar fechas para asegurar consistencia total
+    const fechaEmisionOriginal = facturaConfig.infoFactura?.fechaEmision;
+    console.log(`📅 Fecha emisión original: ${fechaEmisionOriginal}`);
     
-    // Extraer datos necesarios para la validación y posible regeneración
-    const claveAccesoData = {
-      fechaEmision: facturaConfig.infoFactura.fechaEmision,
-      ruc: facturaConfig.infoTributaria.ruc,
-      ambiente: facturaConfig.infoTributaria.ambiente === '2' ? 'produccion' : 'pruebas',
-      codigoEstablecimiento: facturaConfig.infoTributaria.estab,
-      puntoEmision: facturaConfig.infoTributaria.ptoEmi,
-      secuencial: facturaConfig.infoTributaria.secuencial
-    };
+    // Crear objeto Date normalizado
+    let fechaObj;
     
-    // Validar y corregir la clave de acceso
-    const accessKey = validarClaveAcceso(originalAccessKey, claveAccesoData);
-    console.log("Clave de acceso validada/corregida:", accessKey);
-    
-    // Si la clave fue modificada, actualizarla en el objeto invoice
-    if (originalAccessKey !== accessKey && invoice && invoice.infoTributaria) {
-      invoice.infoTributaria.claveAcceso = accessKey;
+    if (typeof fechaEmisionOriginal === 'string') {
+      if (fechaEmisionOriginal.includes('/')) {
+        // Formato DD/MM/YYYY
+        const [dia, mes, anio] = fechaEmisionOriginal.split('/');
+        fechaObj = new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
+      } else if (fechaEmisionOriginal.includes('-')) {
+        // Formato YYYY-MM-DD o ISO
+        fechaObj = new Date(fechaEmisionOriginal);
+      } else {
+        // Otros formatos (como "Sat Jun 21 00:00:00 GMT-05:00 2025")
+        fechaObj = new Date(fechaEmisionOriginal);
+      }
+    } else if (fechaEmisionOriginal instanceof Date) {
+      fechaObj = new Date(fechaEmisionOriginal);
+    } else {
+      console.warn("⚠️ Fecha no proporcionada, usando fecha actual");
+      fechaObj = new Date();
     }
     
-    return { invoice, accessKey };
+    // Validar fecha
+    if (isNaN(fechaObj.getTime())) {
+      console.warn("⚠️ Fecha inválida detectada, usando fecha actual como respaldo");
+      fechaObj = new Date();
+    }
+    
+    // Extraer componentes de fecha
+    const dia = fechaObj.getDate().toString().padStart(2, '0');
+    const mes = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
+    const anio = fechaObj.getFullYear();
+    const anioCorto = anio.toString().slice(-2);
+    
+    // Generar formatos normalizados
+    const fechaParaXML = `${dia}/${mes}/${anio}`;        // DD/MM/YYYY para XML
+    const fechaParaClave = `${dia}${mes}${anio}`;        // DDMMAAAA para clave de acceso (año completo)
+    
+    // Actualizar configuración con fecha normalizada
+    facturaConfig.infoFactura.fechaEmision = fechaParaXML;
+    facturaConfig.fechaStr = fechaParaClave;
+    facturaConfig.fechaParaClaveAcceso = fechaParaXML;
+    
+    console.log(`✅ Fechas normalizadas:
+      - Para XML: ${fechaParaXML}
+      - Para clave: ${fechaParaClave} (DDMMAAAA formato)
+      - Objeto Date: ${fechaObj.toISOString()}`);
+    
+    // PASO 1: Generar la clave de acceso primero
+    console.log("🔑 === GENERANDO CLAVE DE ACCESO === 🔑");
+    const infoTributariaClave = {
+      fechaEmision: fechaParaClave, // DDMMAAAA
+      codDoc: facturaConfig.infoTributaria.codDoc,
+      ruc: facturaConfig.infoTributaria.ruc,
+      ambiente: facturaConfig.infoTributaria.ambiente,
+      codigoEstablecimiento: facturaConfig.infoTributaria.estab,
+      puntoEmision: facturaConfig.infoTributaria.ptoEmi,
+      secuencial: facturaConfig.infoTributaria.secuencial,
+      tipoEmision: facturaConfig.infoTributaria.tipoEmision
+    };
+    
+    const accessKey = generarClaveAcceso(infoTributariaClave);
+    console.log(`🔑 Clave de acceso generada: ${accessKey}`);
+    
+    // Validar que la clave de acceso es válida (49 dígitos)
+    if (!accessKey || accessKey.length !== 49 || !/^\d{49}$/.test(accessKey)) {
+      throw new Error(`Clave de acceso inválida generada: ${accessKey}. Debe tener exactamente 49 dígitos numéricos.`);
+    }
+    
+    // PASO 2: Agregar la clave de acceso a la configuración de factura
+    facturaConfig.infoTributaria.claveAcceso = accessKey;
+    
+    // PASO 3: Generar la estructura de factura con la clave de acceso
+    const invoice = generateInvoice(facturaConfig);
+    console.log(`📋 Estructura de factura generada con clave: ${invoice.infoTributaria.claveAcceso}`);
+    
+    // Verificar que las fechas coinciden (primeros 8 dígitos ahora)
+    const fechaEnClave = accessKey.substring(0, 8); // Primeros 8 dígitos DDMMAAAA
+    if (fechaEnClave !== fechaParaClave) {
+      console.warn(`⚠️ INCONSISTENCIA: Fecha en clave (${fechaEnClave}) != fecha calculada (${fechaParaClave})`);
+    }
+    
+    console.log(`✅ Validaciones exitosas:
+      - Clave longitud: ${accessKey.length} dígitos ✓
+      - Solo números: ${/^\d+$/.test(accessKey) ? '✓' : '✗'}
+      - Fecha consistente: ${fechaEnClave === fechaParaClave ? '✓' : '✗'}`);
+    
+    // Continuar con el flujo completo...
+    
+    // PASO 4: Generar XML de la factura
+    console.log("🔄 === GENERANDO XML === 🔄");
+    
+    // DEBUG: Verificar la estructura antes de generar XML
+    console.log("🔍 === DEBUG: ESTRUCTURA ANTES DE XML === 🔍");
+    console.log("infoFactura.totalConImpuestos:", JSON.stringify(invoice.infoFactura?.totalConImpuestos, null, 2));
+    console.log("infoFactura.pagos:", JSON.stringify(invoice.infoFactura?.pagos, null, 2));
+    if (invoice.detalles && invoice.detalles.length > 0) {
+      console.log("detalles[0].impuestos:", JSON.stringify(invoice.detalles[0]?.impuestos, null, 2));
+    }
+    
+    const xmlSinFirmar = await generarXmlFactura(invoice);
+    console.log(`📝 XML generado. Longitud: ${xmlSinFirmar.length} caracteres`);
+    
+    // DEBUG: Guardar XML sin firmar para análisis
+    console.log(`📁 Guardando XML sin firmar para análisis...`);
+    const debugDir = path.join(rootDir, 'debug_xml');
+    if (!fs.existsSync(debugDir)) {
+      fs.mkdirSync(debugDir, { recursive: true });
+    }
+    
+    const timestamp = new Date().getTime();
+    const xmlSinFirmarPath = path.join(debugDir, `xml_sin_firmar_${timestamp}.xml`);
+    fs.writeFileSync(xmlSinFirmarPath, xmlSinFirmar, 'utf8');
+    console.log(`📄 XML sin firmar guardado en: ${xmlSinFirmarPath}`);
+    
+    // PASO 5: Firmar el XML
+    console.log("🔐 === FIRMANDO XML === 🔐");
+    const certificatePath = path.join(rootDir, 'src', 'certificates', 'certificates.p12');
+    const certificatePassword = 'Hmviid1809'; // En producción esto debería venir de variables de entorno
+    
+    const xmlFirmado = await firmarXml(xmlSinFirmar, certificatePath, certificatePassword);
+    console.log(`✅ XML firmado exitosamente. Longitud: ${xmlFirmado.length} caracteres`);
+    
+    // DEBUG: Guardar XML firmado para análisis
+    const xmlFirmadoPath = path.join(debugDir, `xml_firmado_${timestamp}.xml`);
+    fs.writeFileSync(xmlFirmadoPath, xmlFirmado, 'utf8');
+    console.log(`📄 XML firmado guardado en: ${xmlFirmadoPath}`);
+    
+    // PASO 6: Enviar al SRI para recepción
+    console.log("📤 === ENVIANDO AL SRI (RECEPCIÓN) === 📤");
+    const ambiente = facturaConfig.infoTributaria.ambiente || "1";
+    const urlRecepcion = ambiente === "1" ? SRI_URLS.pruebas.recepcion : SRI_URLS.produccion.recepcion;
+    
+    let recepcionSRI = null;
+    try {
+      const resultadoRecepcion = await documentReception(xmlFirmado, urlRecepcion);
+      recepcionSRI = procesarRespuestaSRI(resultadoRecepcion, 'recepcion');
+      console.log(`📨 Recepción SRI: ${recepcionSRI.estado}`);
+    } catch (error) {
+      console.error("❌ Error en recepción SRI:", error);
+      recepcionSRI = { estado: 'ERROR', mensaje: error.message };
+    }
+    
+    // PASO 7: Consultar autorización (solo si la recepción fue exitosa)
+    let autorizacionSRI = null;
+    if (recepcionSRI && (recepcionSRI.estado === 'RECIBIDA' || recepcionSRI.estado === 'DEVUELTA')) {
+      console.log("🔍 === CONSULTANDO AUTORIZACIÓN === 🔍");
+      const urlAutorizacion = ambiente === "1" ? SRI_URLS.pruebas.autorizacion : SRI_URLS.produccion.autorizacion;
+      
+      try {
+        // Esperar un poco antes de consultar autorización
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const resultadoAutorizacion = await documentAuthorization(accessKey, urlAutorizacion);
+        autorizacionSRI = procesarRespuestaSRI(resultadoAutorizacion, 'autorizacion');
+        console.log(`🔍 Autorización SRI: ${autorizacionSRI.estado}`);
+      } catch (error) {
+        console.error("❌ Error en autorización SRI:", error);
+        autorizacionSRI = { estado: 'ERROR', mensaje: error.message };
+      }
+    }
+    
+    // PASO 8: Retornar resultado completo
+    const resultado = {
+      success: true,
+      claveAcceso: accessKey,
+      factura: invoice,
+      xmlSinFirmar,
+      xmlFirmado,
+      recepcionSRI,
+      autorizacionSRI,
+      mensaje: "Factura electrónica procesada exitosamente"
+    };
+    
+    console.log("🎉 === FACTURA ELECTRÓNICA COMPLETADA === 🎉");
+    console.log(`✅ Clave de acceso: ${accessKey}`);
+    console.log(`✅ Recepción: ${recepcionSRI?.estado || 'No procesada'}`);
+    console.log(`✅ Autorización: ${autorizacionSRI?.estado || 'No procesada'}`);
+    
+    return resultado;
+    
   } catch (error) {
-    console.error("Error al generar factura electrónica:", error);
+    console.error("❌ Error al generar factura electrónica:", error);
     throw new Error(`Error al generar factura electrónica: ${error.message}`);
   }
 }
 
 /**
  * Genera un XML a partir de un objeto factura
- * @param {Object} invoice Objeto factura generado por open-factura
+ * @param {Object} invoice Objeto factura generado
  * @returns {String} XML de la factura
  */
 export async function generarXmlFactura(invoice) {
   try {
-    console.log("Generando XML de factura...");
-    const invoiceXml = generateInvoiceXml(invoice);
+    console.log("🔧 Generando XML de factura con implementación personalizada...");
+    console.log("📋 Estructura de factura recibida:", JSON.stringify({
+      infoTributaria: invoice.infoTributaria ? 'Presente' : 'Faltante',
+      infoFactura: invoice.infoFactura ? 'Presente' : 'Faltante',
+      detalles: invoice.detalles ? `${invoice.detalles.length} elementos` : 'Faltante',
+      infoAdicional: invoice.infoAdicional ? `${invoice.infoAdicional.length} elementos` : 'Faltante'
+    }));
+    
+    // Usar el generador XML oficial basado en XML autorizado
+    console.log("📋 Usando generador XML OFICIAL SRI basado en XML autorizado...");
+    const invoiceXml = generateFacturaXMLSRIOficial(invoice);
     
     // Validar que el XML se generó correctamente
     if (!invoiceXml || invoiceXml.length === 0) {
       throw new Error("El XML generado está vacío o es inválido");
     }
     
-    // Validar que el XML contiene elementos esenciales
-    console.log("Verificando estructura del XML...");
-    if (!invoiceXml.includes('<factura') && !invoiceXml.includes('<comprobante') && !invoiceXml.includes('infoTributaria')) {
-      throw new Error("El XML generado no contiene la estructura de factura esperada");
-    }
+    console.log("📄 XML generado exitosamente");
+    console.log(`📏 Longitud del XML: ${invoiceXml.length} caracteres`);
+    
+    // Verificar elementos críticos
+    const elementosCriticos = ['totalConImpuestos', 'pagos', 'impuestos'];
+    elementosCriticos.forEach(elemento => {
+      if (invoiceXml.includes(`<${elemento}>`)) {
+        console.log(`✅ Elemento '${elemento}' presente en XML`);
+      } else {
+        console.log(`⚠️ Elemento '${elemento}' NO encontrado en XML`);
+      }
+    });
     
     return invoiceXml;
   } catch (error) {
-    console.error("Error al generar XML:", error);
+    console.error("❌ Error al generar XML:", error);
     throw new Error(`Error al generar XML: ${error.message}`);
   }
 }
@@ -107,11 +291,16 @@ export async function generarXmlFactura(invoice) {
  * @param {String} certificatePassword Contraseña del certificado
  * @returns {String} XML firmado digitalmente
  */
+/**
+ * Firma digitalmente un XML utilizando un certificado p12
+ * @param {String} xmlContent Contenido del XML a firmar
+ * @param {String} certificatePath Ruta al certificado .p12
+ * @param {String} certificatePassword Contraseña del certificado
+ * @returns {String} XML firmado digitalmente
+ */
 export async function firmarXml(xmlContent, certificatePath, certificatePassword) {
-  let tempCertPath = null; // Declarar al inicio para que esté disponible en finally
-  
   try {
-    console.log("Firmando XML con certificado:", certificatePath);
+    console.log("🔐 Firmando XML con certificado:", certificatePath);
     
     if (!xmlContent || xmlContent.length === 0) {
       throw new Error("XML vacío o inválido");
@@ -121,116 +310,36 @@ export async function firmarXml(xmlContent, certificatePath, certificatePassword
       throw new Error("No se ha configurado la contraseña del certificado");
     }
     
-    let certBuffer;
-    
-    // Determinar si es una ruta local o de Supabase Storage
-    const esRutaSupabase = certificatePath.startsWith('certificados/') || 
-                         certificatePath.startsWith('syntorystorage/') ||
-                         !certificatePath.includes('/') ||
-                         !fs.existsSync(certificatePath);
-      if (esRutaSupabase) {
-      console.log("Detectada ruta de Supabase Storage, descargando certificado...");
-      
-      // Primero verificar si el certificado existe
-      const certificadoExiste = await verificarCertificadoExiste(certificatePath);
-      if (!certificadoExiste) {
-        throw new Error(`El certificado no existe en Supabase Storage: ${certificatePath}`);
-      }
-      
-      try {
-        certBuffer = await getP12FromSupabase(certificatePath);
-        console.log(`Certificado descargado de Supabase, tamaño: ${certBuffer.byteLength} bytes`);
-        
-        // Crear archivo temporal para el certificado
-        const os = await import('os');
-        const tempDir = os.tmpdir();
-        tempCertPath = path.join(tempDir, `temp_cert_${Date.now()}.p12`);
-        
-        // Escribir el buffer a un archivo temporal
-        fs.writeFileSync(tempCertPath, certBuffer);
-        console.log(`Certificado guardado temporalmente en: ${tempCertPath}`);
-        
-      } catch (storageError) {
-        console.error("Error al obtener certificado de Supabase:", storageError);
-        throw new Error(`No se pudo descargar el certificado desde Supabase: ${storageError.message}`);
-      }
+    // Verificar si el certificado existe localmente
+    let certificadoBuffer;
+    if (fs.existsSync(certificatePath)) {
+      console.log("📁 Usando certificado local:", certificatePath);
+      certificadoBuffer = fs.readFileSync(certificatePath);
+      console.log(`✅ Certificado local cargado, tamaño: ${certificadoBuffer.byteLength} bytes`);
     } else {
-      // Verificar que el archivo existe localmente
-      if (!fs.existsSync(certificatePath)) {
-        throw new Error(`El archivo de certificado local no existe: ${certificatePath}`);
-      }
-      
-      // Verificar tamaño del archivo
-      const stats = fs.statSync(certificatePath);
-      console.log(`Certificado local encontrado, tamaño: ${stats.size} bytes`);
-      
-      if (stats.size === 0) {
-        throw new Error("El certificado está vacío");
-      }
-      
-      // Usar la ruta local directamente
-      tempCertPath = certificatePath;
-      certBuffer = fs.readFileSync(certificatePath);
+      // Fallback: intentar obtener desde Supabase Storage
+      console.log("📥 Certificado no encontrado localmente, descargando desde Supabase Storage...");
+      certificadoBuffer = await getP12FromSupabase(certificatePath);
+      console.log(`✅ Certificado descargado, tamaño: ${certificadoBuffer.byteLength} bytes`);
     }
     
-    if (!certBuffer || certBuffer.byteLength === 0) {
-      throw new Error("No se pudo obtener un certificado válido");
+    // Firmar XML usando nuestro servicio de firma
+    console.log("🔏 Firmando XML con implementación personalizada...");
+    const signedXml = await signXml(xmlContent, certificadoBuffer, certificatePassword);
+    
+    // Verificar que el XML firmado contiene la estructura de firma
+    if (!signedXml || (!signedXml.includes('<ds:Signature') && !signedXml.includes('<Signature'))) {
+      throw new Error("El XML firmado no contiene una firma digital válida");
     }
     
-    console.log(`Certificado obtenido correctamente, tamaño: ${certBuffer.byteLength} bytes`);
+    console.log("✅ XML firmado exitosamente");
+    console.log(`📋 Longitud XML firmado: ${signedXml.length} caracteres`);
     
-    // Preparar XML limpio
-    const cleanXml = xmlContent.trim();
-    
-    // Intentar firmar usando la ruta del archivo
-    try {
-      console.log(`Intentando firmar con certificado en ruta: ${tempCertPath}`);
-      
-      const signedXml = await signXml(cleanXml, tempCertPath, certificatePassword);
-      
-      // Verificar que el XML firmado contiene la estructura de firma
-      if (!signedXml || (!signedXml.includes('<ds:Signature') && !signedXml.includes('<Signature'))) {
-        throw new Error("El XML firmado no contiene una firma digital válida");
-      }
-      
-      console.log("XML firmado exitosamente usando ruta del certificado");
-      return signedXml;
-      
-    } catch (signError) {
-      console.error("Error al firmar con ruta del certificado:", signError);
-      
-      // Método alternativo: usar el buffer directamente
-      try {
-        console.log("Intentando método alternativo de firma con buffer del certificado...");
-        
-        const signedXml = await signXml(cleanXml, certBuffer, certificatePassword);
-        
-        if (!signedXml || (!signedXml.includes('<ds:Signature') && !signedXml.includes('<Signature'))) {
-          throw new Error("El XML firmado no contiene una firma digital válida");
-        }
-        
-        console.log("XML firmado exitosamente usando buffer del certificado");
-        return signedXml;
-        
-      } catch (altError) {
-        console.error("Error con método alternativo:", altError);
-        throw new Error(`No se pudo firmar el XML: ${altError.message}`);
-      }
-    }
+    return signedXml;
     
   } catch (error) {
-    console.error("Error al firmar XML:", error);
+    console.error("❌ Error al firmar XML:", error);
     throw new Error(`Error al firmar XML: ${error.message}`);
-  } finally {
-    // Limpiar archivo temporal si se creó
-    if (tempCertPath && tempCertPath.includes('temp_cert_') && fs.existsSync(tempCertPath)) {
-      try {
-        fs.unlinkSync(tempCertPath);
-        console.log(`Archivo temporal de certificado eliminado: ${tempCertPath}`);
-      } catch (cleanupError) {
-        console.warn(`No se pudo eliminar archivo temporal: ${cleanupError.message}`);
-      }
-    }
   }
 }
 
@@ -275,7 +384,7 @@ export async function enviarDocumentoRecepcion(signedXml, ambiente) {
         }
     }
     
-    // Enviar al SRI para recepción
+    // Enviar al SRI para recepción usando nuestra implementación mejorada
     const receptionResult = await documentReception(
       signedXml,
       SRI_URLS[ambiente].recepcion
@@ -340,7 +449,7 @@ export async function solicitarAutorizacion(claveAcceso, ambiente) {
     console.log(`URL de autorización SRI: ${SRI_URLS[ambiente].autorizacion}`);
     console.log(`Solicitando autorización para clave de acceso: ${claveAcceso}`);
     
-    // Solicitar autorización
+    // Solicitar autorización usando nuestra implementación mejorada
     const authorizationResult = await documentAuthorization(
       claveAcceso,
       SRI_URLS[ambiente].autorizacion
@@ -496,11 +605,22 @@ export function mapFormaPagoToSRI(formaPago) {
  */
 export function formatearFechaSRI(fecha) {
   const fechaObj = fecha instanceof Date ? fecha : new Date(fecha);
-  return fechaObj.toLocaleDateString("es-EC", {
-    day: "2-digit",
-    month: "2-digit", 
-    year: "numeric",
-  }).replace(/\//g, "/");
+  
+  // Asegurarse de que la fecha sea válida
+  if (isNaN(fechaObj.getTime())) {
+    console.error('Fecha inválida recibida, usando fecha actual');
+    return formatearFechaSRI(new Date());
+  }
+  
+  // Formato DD/MM/YYYY para el SRI
+  const dia = fechaObj.getDate().toString().padStart(2, '0');
+  const mes = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
+  const año = fechaObj.getFullYear().toString();
+  
+  const fechaFormateada = `${dia}/${mes}/${año}`;
+  console.log(`Fecha formateada para SRI: ${fechaFormateada}`);
+  
+  return fechaFormateada;
 }
 
 /**
@@ -515,15 +635,50 @@ export function formatearFechaSRI(fecha) {
  * @returns {Object} Configuración para open-factura
  */
 export async function prepararConfiguracionFactura(emisor, cliente, puntoEmision, secuencial, fechaEmision, detalles, formasPago) {
-  // Usar fecha proporcionada o fecha actual
-  const fechaFactura = fechaEmision ? 
-    formatearFechaSRI(fechaEmision) :
-    formatearFechaSRI(new Date());
-  // Calcular totales correctamente
-  const subtotalCalculado = detalles.reduce((sum, d) => sum + Number(d.subtotal || 0), 0);
+  // Usar fecha proporcionada o fecha actual, manejando correctamente la zona horaria
+  let fechaParaFactura;
+  if (fechaEmision) {
+    // Si la fecha viene en formato YYYY-MM-DD, parsearla correctamente para evitar problemas de zona horaria
+    if (typeof fechaEmision === 'string' && fechaEmision.includes('-')) {
+      const partes = fechaEmision.split('-');
+      if (partes.length === 3) {
+        // Crear fecha en la zona horaria local para evitar desfases
+        // IMPORTANTE: Usamos los valores exactos sin conversión de zona horaria
+        fechaParaFactura = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]), 12, 0, 0, 0);
+        console.log(`Fecha parseada desde YYYY-MM-DD: ${fechaEmision} -> ${fechaParaFactura.toDateString()}`);
+      } else {
+        fechaParaFactura = new Date(fechaEmision);
+      }
+    } else {
+      fechaParaFactura = new Date(fechaEmision);
+    }
+  } else {
+    fechaParaFactura = new Date();
+  }
+  
+  // Validar fecha
+  if (isNaN(fechaParaFactura.getTime())) {
+    console.error('Fecha de emisión inválida, usando fecha actual');
+    fechaParaFactura = new Date();
+  }
+  
+  // Formatear la fecha para el XML (DD/MM/YYYY)
+  const fechaFactura = formatearFechaSRI(fechaParaFactura);
+  console.log(`Fecha factura para XML: ${fechaFactura}`);
+  console.log(`Fecha emisión original: ${fechaEmision}`);
+  console.log(`Fecha objeto creado: ${fechaParaFactura.toDateString()}`);
+  
+  // IMPORTANTE: Guardar la fecha exacta para usar en la clave de acceso
+  // La clave de acceso debe usar la MISMA fecha que aparece en el XML
+  const fechaParaClaveAcceso = fechaFactura; // DD/MM/YYYY formato para clave
+  console.log(`Fecha que se usará para clave de acceso: ${fechaParaClaveAcceso}`);
   
   // Obtener el IVA por defecto
   const defaultIva = await getDefaultIva();
+  console.log(`IVA por defecto del sistema: ${defaultIva}`);
+  
+  // Calcular totales correctamente
+  const subtotalCalculado = detalles.reduce((sum, d) => sum + Number(d.subtotal || 0), 0);
   
   const ivaCalculado = detalles.reduce((sum, d) => {
     const subtotalProducto = Number(d.subtotal || 0);
@@ -531,6 +686,8 @@ export async function prepararConfiguracionFactura(emisor, cliente, puntoEmision
     return sum + (subtotalProducto * ivaProducto);
   }, 0);
   const totalCalculado = subtotalCalculado + ivaCalculado;
+  
+  console.log(`Totales calculados: { subtotal: ${subtotalCalculado}, iva: ${ivaCalculado}, total: ${totalCalculado} }`);
 
   return {
     infoTributaria: {
@@ -549,9 +706,9 @@ export async function prepararConfiguracionFactura(emisor, cliente, puntoEmision
     infoFactura: {
       fechaEmision: fechaFactura,
       dirEstablecimiento: emisor.direccion,
-      contribuyenteEspecial: emisor.contribuyente_especial || "",
+      // contribuyenteEspecial: OMITIDO - solo incluir si el emisor es contribuyente especial
       obligadoContabilidad: emisor.obligado_contabilidad ? "SI" : "NO",
-      tipoIdentificacionComprador: cliente.cedula_ruc.length === 13 ? "04" : "05",
+      tipoIdentificacionComprador: cliente.tipo_identificacion || (cliente.cedula_ruc.length === 13 ? "04" : "05"),
       guiaRemision: "", // Si aplica
       razonSocialComprador: `${cliente.nombre} ${cliente.apellido || ""}`.trim(),
       identificacionComprador: cliente.cedula_ruc,
@@ -561,7 +718,7 @@ export async function prepararConfiguracionFactura(emisor, cliente, puntoEmision
       totalConImpuestos: [
         {
           codigo: "2", // IVA
-          codigoPorcentaje: "2", // 15% (código 2 para 15%)
+          codigoPorcentaje: "4", // CORREGIDO: código 4 para IVA 15%
           baseImponible: subtotalCalculado.toFixed(2),
           tarifa: "15.00",
           valor: ivaCalculado.toFixed(2),
@@ -573,19 +730,27 @@ export async function prepararConfiguracionFactura(emisor, cliente, puntoEmision
       pagos: formasPago.map((fp) => {
         // Mapear nombres del frontend a códigos SRI
         const codigoFormaPago = mapFormaPagoToSRI(fp.forma_pago || fp.tipo);
+        console.log(`Mapeando forma de pago: "${fp.forma_pago}" -> "${codigoFormaPago}"`);
         
         return {
           formaPago: codigoFormaPago,
           total: Number(fp.valor_pago || fp.valor || 0).toFixed(2),
           plazo: fp.plazo || 0,
-          unidadTiempo: fp.unidad_tiempo || "dias",
-        };
+          unidadTiempo: fp.unidad_tiempo || "dias",        };
       }),
     },
-    detalles: detalles.map((d) => {
+    detalles: detalles.map((d, index) => {
       const subtotalProducto = Number(d.subtotal || 0);
       const ivaProducto = Number(d.iva || defaultIva);
       const ivaValor = subtotalProducto * ivaProducto;
+      
+      console.log(`Procesando detalle ${index + 1}: {
+  id_producto: ${d.id_producto},
+  cantidad: ${d.cantidad},
+  precio_unitario: ${d.precio_unitario},
+  subtotal: ${d.subtotal},
+  iva: ${d.iva}
+}`);
       
       return {
         codigoPrincipal: d.id_producto.toString(),
@@ -598,18 +763,20 @@ export async function prepararConfiguracionFactura(emisor, cliente, puntoEmision
         impuestos: [
           {
             codigo: "2", // IVA
-            codigoPorcentaje: "2", // 15% (código 2 para 15%)
+            codigoPorcentaje: "4", // CORREGIDO: código 4 para IVA 15% 
             tarifa: (ivaProducto * 100).toFixed(2),
             baseImponible: subtotalProducto.toFixed(2),
             valor: ivaValor.toFixed(2),
           },
         ],
-      };
-    }),
+      };    }),
     infoAdicional: [
       { nombre: "Email", valor: cliente.email || "N/A" },
       { nombre: "Teléfono", valor: cliente.telefono || "N/A" },
     ],
+    // Información adicional para la clave de acceso
+    fechaParaClaveAcceso: fechaParaClaveAcceso,
+    fechaObjeto: fechaParaFactura
   };
 }
 
@@ -672,144 +839,32 @@ export async function verificarEstadoFactura(claveAcceso, ambiente) {
  */
 export async function getP12FromSupabase(certificatePath) {
   try {
-    console.log(`Obteniendo certificado desde Supabase: ${certificatePath}`);
+    console.log(`✅ Obteniendo certificado desde Supabase: ${certificatePath}`);
     
-    // Obtener cliente de Supabase directamente
-    const { getConnection } = await import('../database/connection.js');
-    const supabase = await getConnection();
+    // Usar el StorageService que ya sabemos que funciona
+    const storageService = new StorageService();
     
-    // Determinar bucket y ruta - usar el mismo bucket que para los logos
-    let bucket = 'syntorystorage'; // Bucket por defecto (mismo que los logos)
-    let filePath = certificatePath;
+    // Descargar el archivo directamente
+    const blob = await storageService.downloadFile('syntorystorage', certificatePath);
     
-    // Limpiar la ruta del certificado
-    if (certificatePath.includes('/')) {
-      const pathParts = certificatePath.split('/');
-      // Si la primera parte no es 'certificados', asumimos que es el bucket
-      if (pathParts.length >= 2 && pathParts[0] !== 'certificados') {
-        bucket = pathParts[0];
-        filePath = pathParts.slice(1).join('/');
-      } else {
-        // La ruta es algo como 'certificados/archivo.p12'
-        filePath = certificatePath;
-      }
-    }
-    
-    console.log(`Descargando de bucket: ${bucket}, ruta: ${filePath}`);
-    console.log(`Descargando archivo como buffer desde: ${bucket}/${filePath}`);
-    
-    // Intentar diferentes métodos de descarga
-    let data = null;
-    let error = null;
-    
-    // Método 1: Download directo
-    try {
-      console.log("Método 1: Descarga directa con download()");
-      const result = await supabase.storage.from(bucket).download(filePath);
-      data = result.data;
-      error = result.error;
-    } catch (downloadError) {
-      console.log("Método 1 falló:", downloadError.message);
-      error = downloadError;
-    }
-    
-    // Método 2: Si el método 1 falla, intentar crear una URL pública y descargar
-    if (error || !data) {
-      try {
-        console.log("Método 2: Creando URL pública para descarga");
-        
-        // Crear URL pública (puede que necesite permisos públicos)
-        const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
-        
-        if (urlData && urlData.publicUrl) {
-          console.log("URL pública creada:", urlData.publicUrl);
-          
-          // Descargar usando fetch
-          const response = await fetch(urlData.publicUrl);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const arrayBuffer = await response.arrayBuffer();
-          data = {
-            arrayBuffer: () => Promise.resolve(arrayBuffer),
-            size: arrayBuffer.byteLength
-          };
-          error = null;
-          
-          console.log("Descarga exitosa con URL pública");
-        } else {
-          throw new Error("No se pudo crear URL pública");
-        }
-      } catch (publicUrlError) {
-        console.log("Método 2 falló:", publicUrlError.message);
-        
-        // Método 3: Crear URL firmada (signed URL)
-        try {
-          console.log("Método 3: Creando URL firmada para descarga");
-          
-          const { data: signedData, error: signedError } = await supabase.storage
-            .from(bucket)
-            .createSignedUrl(filePath, 300); // 5 minutos de validez
-          
-          if (signedError) {
-            throw signedError;
-          }
-          
-          if (signedData && signedData.signedUrl) {
-            console.log("URL firmada creada:", signedData.signedUrl);
-            
-            // Descargar usando fetch
-            const response = await fetch(signedData.signedUrl);
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const arrayBuffer = await response.arrayBuffer();
-            data = {
-              arrayBuffer: () => Promise.resolve(arrayBuffer),
-              size: arrayBuffer.byteLength
-            };
-            error = null;
-            
-            console.log("Descarga exitosa con URL firmada");
-          } else {
-            throw new Error("No se pudo crear URL firmada");
-          }
-        } catch (signedUrlError) {
-          console.log("Método 3 falló:", signedUrlError.message);
-          error = signedUrlError;
-        }
-      }
-    }
-    
-    // Si todos los métodos fallaron
-    if (error || !data) {
-      console.error('Error final de Supabase Storage:', error);
-      throw new Error(`Error al descargar archivo P12: ${error?.message || 'Respuesta vacía'}`);
-    }
-    
-    console.log(`Archivo descargado exitosamente, tamaño: ${data.size} bytes`);
-    
-    // Convertir el blob a buffer
-    const arrayBuffer = await data.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    
-    console.log(`Certificado descargado exitosamente, tamaño: ${buffer.byteLength} bytes`);
-    
-    // Validar que el buffer no está vacío
-    if (buffer.byteLength === 0) {
+    if (!blob || blob.size === 0) {
       throw new Error('El certificado descargado está vacío');
     }
     
+    // Convertir Blob a ArrayBuffer y luego a Buffer
+    const arrayBuffer = await blob.arrayBuffer();
+    const resultBuffer = Buffer.from(arrayBuffer);
+    
     // Verificar que el buffer tiene contenido válido de P12
-    if (buffer.byteLength < 100) {
-      throw new Error(`El certificado parece ser muy pequeño: ${buffer.byteLength} bytes`);
+    if (resultBuffer.byteLength < 100) {
+      throw new Error(`El certificado parece ser muy pequeño: ${resultBuffer.byteLength} bytes`);
     }
     
-    return buffer;
+    console.log(`✅ Certificado descargado exitosamente, tamaño: ${resultBuffer.byteLength} bytes`);
+    return resultBuffer;
+    
   } catch (error) {
-    console.error('Error al descargar certificado de Supabase:', error);
+    console.error('❌ Error al descargar certificado de Supabase:', error);
     throw new Error(`Error al obtener certificado P12 desde Supabase: ${error.message}`);
   }
 }
@@ -821,40 +876,16 @@ export async function getP12FromSupabase(certificatePath) {
  */
 export async function verificarCertificadoExiste(certificatePath) {
   try {
-    console.log(`Verificando existencia del certificado: ${certificatePath}`);
+    console.log(`🔍 Verificando existencia del certificado: ${certificatePath}`);
     
-    const { getConnection } = await import('../database/connection.js');
-    const supabase = await getConnection();
+    const storageService = new StorageService();
+    const existe = await storageService.fileExists('syntorystorage', certificatePath);
     
-    let bucket = 'syntorystorage';
-    let filePath = certificatePath;
-    
-    if (certificatePath.includes('/')) {
-      const pathParts = certificatePath.split('/');
-      if (pathParts.length >= 2 && pathParts[0] !== 'certificados') {
-        bucket = pathParts[0];
-        filePath = pathParts.slice(1).join('/');
-      } else {
-        filePath = certificatePath;
-      }
-    }
-    
-    // Intentar obtener información del archivo
-    const { data, error } = await supabase.storage.from(bucket).list(path.dirname(filePath), {
-      search: path.basename(filePath)
-    });
-    
-    if (error) {
-      console.log(`Error al verificar certificado: ${error.message}`);
-      return false;
-    }
-    
-    const existe = data && data.length > 0;
-    console.log(`Certificado ${existe ? 'existe' : 'no existe'} en Supabase Storage`);
-    
+    console.log(`${existe ? '✅' : '❌'} Certificado ${existe ? 'existe' : 'no existe'} en Supabase Storage`);
     return existe;
+    
   } catch (error) {
-    console.log(`Error al verificar certificado: ${error.message}`);
+    console.log(`❌ Error al verificar certificado: ${error.message}`);
     return false;
   }
 }
@@ -868,33 +899,63 @@ export async function verificarCertificadoExiste(certificatePath) {
 export function validarClaveAcceso(claveAcceso, facturaData) {
   console.log("Validando clave de acceso:", claveAcceso);
   
-  // Verificar si la clave de acceso está vacía o contiene NaN
+  // Verificar que los datos de factura incluyen fechaStr en formato DDMMAA
+  if (!facturaData.fechaStr || facturaData.fechaStr.length !== 6) {
+    console.error(`Error: facturaData.fechaStr debe estar presente y tener 6 dígitos (DDMMAA). Valor recibido: ${facturaData.fechaStr}`);
+    
+    // Intentar recuperar la fecha del objeto si es posible
+    if (facturaData.fechaEmision) {
+      try {
+        const partes = facturaData.fechaEmision.split('/');
+        if (partes.length === 3) {
+          facturaData.fechaStr = `${partes[0]}${partes[1]}${partes[2].slice(-2)}`;
+          console.log(`Fecha recuperada de fechaEmision: ${facturaData.fechaStr}`);
+        }
+      } catch (e) {
+        console.error("No se pudo recuperar la fecha:", e);
+      }
+    }
+  }
+  
+  // Verificar si la clave de acceso está vacía o contiene NaN o undefined
   if (!claveAcceso || claveAcceso.includes('NaN') || claveAcceso.includes('undefined')) {
     console.log("Clave de acceso inválida, generando una nueva");
-    return generarClaveAccesoManual(facturaData);
+    // Usar la función de nuestro nuevo servicio
+    return generarClaveAcceso(facturaData);
   }
   
   // Verificar que solo contenga dígitos numéricos
   if (!/^\d+$/.test(claveAcceso)) {
     console.log("Clave de acceso contiene caracteres no numéricos, generando una nueva");
-    return generarClaveAccesoManual(facturaData);
+    return generarClaveAcceso(facturaData);
   }
   
   // Verificar la longitud
   if (claveAcceso.length !== 49) {
-    console.log(`Longitud incorrecta: ${claveAcceso.length}, ajustando a 49 caracteres`);
-    
-    if (claveAcceso.length > 49) {
-      // Si es más larga, truncar
-      return claveAcceso.substring(0, 49);
-    } else {
-      // Si es más corta, rellenar con ceros
-      return claveAcceso.padEnd(49, '0');
-    }
+    console.log(`Longitud incorrecta: ${claveAcceso.length}, regenerando clave completa`);
+    return generarClaveAcceso(facturaData);
   }
   
-  // La clave es válida
-  return claveAcceso;
+  try {
+    // Extraer la fecha de la clave de acceso (primeros 6 dígitos DDMMAA)
+    const fechaClave = claveAcceso.substring(0, 6);
+    
+    // Usar la fechaStr ya validada del objeto facturaData
+    const fechaFactura = facturaData.fechaStr;
+    
+    // Si la fechaStr no coincide con la fecha en la clave, regenerar
+    if (fechaClave !== fechaFactura) {
+      console.log(`Fecha en clave (${fechaClave}) no coincide con fecha factura (${fechaFactura || 'no disponible'}), regenerando`);
+      return generarClaveAcceso(facturaData);
+    }
+    
+    // Si llegamos aquí, la clave parece válida
+    return claveAcceso;
+    
+  } catch (error) {
+    console.error("Error validando clave de acceso, regenerando:", error);
+    return generarClaveAcceso(facturaData);
+  }
 }
 
 /**
@@ -902,148 +963,24 @@ export function validarClaveAcceso(claveAcceso, facturaData) {
  * @param {Object} data Datos necesarios para generar la clave
  * @returns {String} Clave de acceso generada
  */
+/**
+ * Usa la implementación de generarClaveAcceso del nuevo servicio
+ * @param {Object} data Datos necesarios para generar la clave
+ * @returns {String} Clave de acceso generada
+ */
 export function generarClaveAccesoManual(data) {
-  // Formato SRI: fecha(6)+tipoComprobante(2)+ruc(13)+ambiente(1)+serie(6)+secuencial(9)+codigoNumerico(8)+tipoEmision(1)+digitoVerificador(1) = 49 dígitos
-  try {
-    const { fechaEmision, ruc, ambiente, codigoEstablecimiento, puntoEmision, secuencial } = data;
-    
-    // Determinar la fecha a usar
-    let fechaParaUsar;
-    if (fechaEmision) {
-      // Si se proporciona una fecha específica, usarla
-      fechaParaUsar = new Date(fechaEmision);
-    } else {
-      // Si no, usar la fecha actual
-      fechaParaUsar = new Date();
-    }
-    
-    // Verificar que la fecha sea válida
-    if (isNaN(fechaParaUsar.getTime())) {
-      console.error('Fecha inválida, usando fecha actual');
-      fechaParaUsar = new Date();
-    }
-    
-    // Formato correcto del SRI: DDMMAA (6 dígitos)
-    const dia = fechaParaUsar.getDate().toString().padStart(2, '0');
-    const mes = (fechaParaUsar.getMonth() + 1).toString().padStart(2, '0');
-    const año = fechaParaUsar.getFullYear().toString().slice(-2); // Solo los últimos 2 dígitos
-    
-    // Formato correcto: DDMMAA
-    let fechaStr = `${dia}${mes}${año}`;
-    
-    console.log(`Generando clave con fecha: ${fechaStr} (formato DDMMAA para SRI)`);
-    
-    // Verificar que la fecha tenga exactamente 6 dígitos
-    if (!/^\d{6}$/.test(fechaStr)) {
-      console.error(`Formato de fecha incorrecto: ${fechaStr}, regenerando`);
-      fechaStr = dia + mes + año;
-      console.log(`Nueva fecha regenerada: ${fechaStr}`);
-    }    const tipoComprobante = '01'; // Factura
-    const ambienteStr = ambiente === 'produccion' ? '2' : '1';
-    const establecimiento = (codigoEstablecimiento || '001').toString().padStart(3, "0");
-    const puntoEmi = (puntoEmision || '001').toString().padStart(3, "0");
-    const serie = `${establecimiento}${puntoEmi}`;
-    const secuencialStr = (secuencial || '1').toString().padStart(9, '0');
-    const codigoNumerico = Math.floor(10000000 + Math.random() * 90000000).toString(); // 8 dígitos aleatorios
-    const tipoEmision = '1'; // Emisión normal
-    
-    // Asegurar que el RUC tenga exactamente 13 dígitos
-    const rucStr = ruc.toString().padStart(13, '0');
-    
-    console.log("Verificando longitudes de componentes:");
-    console.log(`- Fecha: ${fechaStr} (${fechaStr.length} chars)`);
-    console.log(`- Tipo Comprobante: ${tipoComprobante} (${tipoComprobante.length} chars)`);
-    console.log(`- RUC: ${rucStr} (${rucStr.length} chars)`);
-    console.log(`- Ambiente: ${ambienteStr} (${ambienteStr.length} chars)`);
-    console.log(`- Serie: ${serie} (${serie.length} chars)`);
-    console.log(`- Secuencial: ${secuencialStr} (${secuencialStr.length} chars)`);
-    console.log(`- Código numérico: ${codigoNumerico} (${codigoNumerico.length} chars)`);
-    console.log(`- Tipo emisión: ${tipoEmision} (${tipoEmision.length} chars)`);
-      // Verificar que todos los componentes sean numéricos
-    const componentesNumericos = [fechaStr, tipoComprobante, rucStr, ambienteStr, serie, secuencialStr, codigoNumerico, tipoEmision];
-    for (const componente of componentesNumericos) {
-      if (!/^\d+$/.test(componente)) {
-        console.error(`Componente no numérico detectado: ${componente}`);
-        throw new Error(`Componente no numérico en clave de acceso: ${componente}`);
-      }
-    }
-    
-    // Construir clave sin dígito verificador - Usando formato SRI
-    const claveBase = `${fechaStr}${tipoComprobante}${rucStr}${ambienteStr}${serie}${secuencialStr}${codigoNumerico}${tipoEmision}`;
-    
-    console.log(`Clave base construida: ${claveBase} (${claveBase.length} chars)`);    // Verificar longitud antes del dígito verificador (debería ser 48)
-    if (claveBase.length !== 48) {
-      console.error(`Longitud incorrecta de clave base: ${claveBase.length} (esperado 48)`);
-      console.error(`Componentes: Fecha=${fechaStr}(${fechaStr.length}), TipoComp=${tipoComprobante}(${tipoComprobante.length}), RUC=${rucStr}(${rucStr.length}), Amb=${ambienteStr}(${ambienteStr.length}), Serie=${serie}(${serie.length}), Sec=${secuencialStr}(${secuencialStr.length}), Codigo=${codigoNumerico}(${codigoNumerico.length}), TipoEmi=${tipoEmision}(${tipoEmision.length})`);
-    }
-    
-    // Calcular dígito verificador (módulo 11)
-    const digitoVerificador = calcularDigitoVerificador(claveBase);
-    
-    // Construir clave completa
-    const claveCompleta = `${claveBase}${digitoVerificador}`;
-    
-    console.log(`Clave de acceso generada: ${claveCompleta} (Fecha: ${fechaStr})`);    console.log(`Componentes de la clave:`);
-    console.log(`- Fecha (DDMMAA): ${fechaStr} (${fechaStr.length} chars)`);
-    console.log(`- Tipo Comprobante: ${tipoComprobante} (${tipoComprobante.length} chars)`);
-    console.log(`- RUC: ${rucStr} (${rucStr.length} chars)`);
-    console.log(`- Ambiente: ${ambienteStr} (${ambienteStr.length} chars)`);
-    console.log(`- Serie: ${serie} (${serie.length} chars)`);
-    console.log(`- Secuencial: ${secuencialStr} (${secuencialStr.length} chars)`);
-    console.log(`- Código numérico: ${codigoNumerico} (${codigoNumerico.length} chars)`);
-    console.log(`- Tipo emisión: ${tipoEmision} (${tipoEmision.length} chars)`);
-    console.log(`- Dígito verificador: ${digitoVerificador} (${digitoVerificador.length} chars)`);// Verificar longitud final (debe ser 49)
-    if (claveCompleta.length !== 49) {
-      console.error(`Error en longitud de clave generada: ${claveCompleta.length} (esperado 49)`);
-      // Ajustar para que siempre tenga 49 caracteres
-      if (claveCompleta.length > 49) {
-        return claveCompleta.substring(0, 49);
-      } else {
-        return claveCompleta.padEnd(49, '0');
-      }
-    }
-    
-    return claveCompleta;
-  } catch (error) {
-    console.error("Error generando clave de acceso manual:", error);
-    
-    // Generar una clave de emergencia que cumpla con los 49 caracteres
-    const fechaHoy = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const timestamp = Date.now().toString().substring(0, 10);
-    const clave = `${fechaHoy}01${'0'.repeat(30)}${timestamp}`;
-    return clave.substring(0, 49);
-  }
+  // Esta función ahora solo es un wrapper para mantener compatibilidad
+  // Usamos la implementación de nuestro nuevo servicio
+  const { generarClaveAcceso } = require('./sri-facturacion.service.js');
+  return generarClaveAcceso(data);
 }
 
 /**
- * Calcula el dígito verificador para una clave de acceso según algoritmo del SRI (módulo 11)
- * @param {String} clave Clave base sin el dígito verificador
- * @returns {String} Dígito verificador (0-9)
+ * @deprecated Usar la función del nuevo servicio en su lugar
  */
 export function calcularDigitoVerificador(clave) {
-  const coeficientes = [2, 3, 4, 5, 6, 7];
-  let suma = 0;
-  let coeficientePos = 0;
-  
-  // Sumar los productos de cada dígito por el coeficiente correspondiente
-  for (let i = clave.length - 1; i >= 0; i--) {
-    const digito = parseInt(clave[i], 10);
-    suma += digito * coeficientes[coeficientePos];
-    coeficientePos = (coeficientePos + 1) % coeficientes.length;
-  }
-  
-  // Calcular el módulo 11
-  const modulo = suma % 11;
-  const resultado = 11 - modulo;
-  
-  // Si el resultado es 11, el dígito es 0; si es 10, el dígito es 1; en otro caso, es el resultado mismo
-  if (resultado === 11) {
-    return '0';
-  } else if (resultado === 10) {
-    return '1';
-  } else {
-    return resultado.toString();
-  }
+  const { calcularDigitoVerificador } = require('./sri-facturacion.service.js');
+  return calcularDigitoVerificador(clave);
 }
 
 /**
@@ -1056,16 +993,16 @@ export async function enviarXmlSinFirma(xml, url) {
   try {
     console.log(`Enviando XML sin firma al SRI: ${url}`);
     
-    // Crear solicitud SOAP
+    // Crear solicitud SOAP - SIN CDATA ni base64 para evitar problemas de interpretación
     const soapRequest = `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ec="http://ec.gob.sri.ws.recepcion">
-  <soapenv:Header/>
-  <soapenv:Body>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ec="http://ec.gob.sri.ws.recepcion">
+  <soap:Header />
+  <soap:Body>
     <ec:validarComprobante>
-      <xml>${Buffer.from(xml).toString('base64')}</xml>
+      <xml>${xml}</xml>
     </ec:validarComprobante>
-  </soapenv:Body>
-</soapenv:Envelope>`;
+  </soap:Body>
+</soap:Envelope>`;
 
     // Importar fetch
     const fetch = (await import('node-fetch')).default;
@@ -1123,5 +1060,119 @@ export async function enviarXmlSinFirma(xml, url) {
       mensaje: error.message,
       error: true
     };
+  }
+}
+
+/**
+ * Convierte las fechas en el XML de formato YYYY/MM/DD a DD/MM/YYYY para cumplir con el estándar SRI
+ * @param {String} xml XML con fechas en formato YYYY/MM/DD
+ * @returns {String} XML con fechas convertidas a formato DD/MM/YYYY
+ */
+export function convertirFechasParaSRI(xml) {
+  try {
+    // Patrón para buscar fechas en formato YYYY/MM/DD
+    const patronFechaYYYYMMDD = /(\d{4})\/(\d{2})\/(\d{2})/g;
+    
+    // Patrón para buscar fechas en formato YYYY-MM-DD
+    const patronFechaYYYYMMDD2 = /(\d{4})-(\d{2})-(\d{2})/g;
+    
+    // Convertir todas las fechas encontradas en formato YYYY/MM/DD
+    let xmlConvertido = xml.replace(patronFechaYYYYMMDD, (match, year, month, day) => {
+      // Convertir YYYY/MM/DD a DD/MM/YYYY
+      const fechaConvertida = `${day}/${month}/${year}`;
+      console.log(`Convirtiendo fecha: ${match} → ${fechaConvertida}`);
+      return fechaConvertida;
+    });
+    
+    // Convertir todas las fechas encontradas en formato YYYY-MM-DD
+    xmlConvertido = xmlConvertido.replace(patronFechaYYYYMMDD2, (match, year, month, day) => {
+      // Convertir YYYY-MM-DD a DD/MM/YYYY
+      const fechaConvertida = `${day}/${month}/${year}`;
+      console.log(`Convirtiendo fecha: ${match} → ${fechaConvertida}`);
+      return fechaConvertida;
+    });
+    
+    // Verificar si algún tag de fecha contiene formato incorrecto
+    // Ejemplo: <fechaEmision>2025-06-22</fechaEmision> o <fechaEmision>2025/06/22</fechaEmision>
+    const tagsConFechas = ['<fechaEmision>', '<fechaAutorizacion>', '<fechaInicio>', '<fechaFin>', '<fechaImpresion>'];
+    
+    // Log para depuración
+    for (const tag of tagsConFechas) {
+      const tagRegex = new RegExp(`${tag}([^<]+)<\/`, 'g');
+      const matches = [...xmlConvertido.matchAll(tagRegex)];
+      
+      for (const match of matches) {
+        const fechaActual = match[1];
+        console.log(`Fecha en tag ${tag}: ${fechaActual}`);
+        
+        // Verificar si la fecha está en formato DD/MM/YYYY
+        const esFormatoCorrecto = /\d{2}\/\d{2}\/\d{4}/.test(fechaActual);
+        if (!esFormatoCorrecto) {
+          console.warn(`¡Advertencia! Fecha en formato incorrecto en tag ${tag}: ${fechaActual}`);
+        }
+      }
+    }
+    
+    return xmlConvertido;
+  } catch (error) {
+    console.error("Error al convertir fechas en XML:", error);
+    return xml; // Retornar XML original si hay error
+  }
+}
+
+/**
+ * Procesa las respuestas del SRI y extrae información relevante
+ * @param {Object} respuestaSRI - Respuesta del SRI
+ * @param {String} tipo - Tipo de respuesta ('recepcion' o 'autorizacion')
+ * @returns {Object} Respuesta procesada
+ */
+function procesarRespuestaSRI(respuestaSRI, tipo) {
+  try {
+    console.log(`🔍 Procesando respuesta SRI (${tipo}):`, JSON.stringify(respuestaSRI, null, 2));
+    
+    if (!respuestaSRI) {
+      return { estado: 'ERROR', mensaje: 'Respuesta vacía del SRI' };
+    }
+    
+    if (tipo === 'recepcion') {
+      const estado = respuestaSRI.estado || 'DESCONOCIDO';
+      const comprobantes = respuestaSRI.comprobantes || [];
+      const mensajes = respuestaSRI.mensajes || [];
+      
+      return {
+        estado,
+        comprobantes,
+        mensajes,
+        respuestaCompleta: respuestaSRI
+      };
+    } else if (tipo === 'autorizacion') {
+      // Buscar autorizaciones en la respuesta
+      let autorizaciones = respuestaSRI.autorizaciones || [];
+      if (!Array.isArray(autorizaciones) && respuestaSRI.autorizacion) {
+        autorizaciones = [respuestaSRI.autorizacion];
+      }
+      
+      if (autorizaciones.length > 0) {
+        const autorizacion = autorizaciones[0];
+        return {
+          estado: autorizacion.estado || 'DESCONOCIDO',
+          numeroAutorizacion: autorizacion.numeroAutorizacion,
+          fechaAutorizacion: autorizacion.fechaAutorizacion,
+          mensajes: autorizacion.mensajes || [],
+          respuestaCompleta: respuestaSRI
+        };
+      } else {
+        return {
+          estado: 'NO_AUTORIZADA',
+          mensajes: respuestaSRI.mensajes || [],
+          respuestaCompleta: respuestaSRI
+        };
+      }
+    }
+    
+    return { estado: 'DESCONOCIDO', respuestaCompleta: respuestaSRI };
+  } catch (error) {
+    console.error(`❌ Error procesando respuesta SRI (${tipo}):`, error);
+    return { estado: 'ERROR', mensaje: error.message };
   }
 }

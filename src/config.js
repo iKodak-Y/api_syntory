@@ -5,6 +5,13 @@ export default {
   port: process.env.PORT || 3000,
   databaseUrl: process.env.DATABASE_URL || '',
   jwtSecret: process.env.JWT_SECRET || 'syntory_app_secret_key',
+  // SRI configuration
+  sri: {
+    receptionUrl: process.env.SRI_RECEPTION_URL || 'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline',
+    authorizationUrl: process.env.SRI_AUTHORIZATION_URL || 'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline',
+    receptionUrlTest: process.env.SRI_RECEPTION_URL_TEST || 'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline',
+    authorizationUrlTest: process.env.SRI_AUTHORIZATION_URL_TEST || 'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline'
+  },
   // Supabase configuration
   supabase: {    
     url: process.env.SUPABASE_URL || 'https://mfxlnmphnuretjlrhmsc.supabase.co',
